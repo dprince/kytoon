@@ -1,0 +1,81 @@
+= Kytoon
+
+Create & configure ephemeral virtual private clouds
+
+== Description
+
+A set of Rake tasks that provide a framework to help automate the creation and configuration of “identical” VPC server groups. Kytoon provides the ability to create projects that can be used by team members and continuous integration systems to spin up groups of servers for development and/or testing. Configuration information is stored in JSON and YAML formats which can be easily parsed, edited, and version controlled.
+
+Inspired by and based on the Chef VPC Toolkit.
+
+== Supports
+
+- Cloud Servers VPC (Rackspace and OpenStack)
+- XenServer
+
+== Installation
+
+1) Gem install kytoon.
+
+2) Add Kytoon tasks to your projects Rakefile:
+
+	KYTOON_PROJECT = "#{File.dirname(__FILE__)}" unless defined?(KYTOON_PROJECT)
+	require 'rubygems'
+	require 'kytoon'
+	include Kytoon
+
+3) Create a .kytoon.conf file in your HOME directory that contains the following:
+
+	# Set one of the following group_types
+	group_type: cloud_server_vpc
+	#group_type: xenserver
+
+	# Cloud Servers VPC credentials
+	cloud_servers_vpc_url: https://your.vpc.url/
+	cloud_servers_vpc_username: <username>
+	cloud_servers_vpc_password: <password>
+
+== Examples
+
+Example commands:
+
+        - Create a new server group.
+
+                $ rake group:create
+
+        - List your currently running server groups.
+
+                $ rake group:list
+
+        - SSH into the current (most recently created) server group
+
+                $ rake ssh
+
+        - SSH into a server group with an ID of 3
+
+                $ rake ssh GROUP_ID=3
+
+        - Delete the server group with an ID of 3
+
+                $ rake group:delete GROUP_ID=3
+
+
+== Bash Automation Script
+
+The following is an example bash script to spin up a group and run commands via SSH.
+
+        #!/bin/bash
+        trap "rake group:delete" INT TERM EXIT # cleanup the group on exit
+
+        # create a server group
+        rake group:create
+
+        # Run some scripts on the login server
+        rake ssh bash <<-EOF_BASH
+                echo 'It works!'
+        EOF_BASH
+
+
+== Copyright
+
+Copyright (c) 2012 Red Hat Inc. See LICENSE.txt for further details.
