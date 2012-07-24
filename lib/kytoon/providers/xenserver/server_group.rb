@@ -1,9 +1,8 @@
 require 'json'
-require 'builder'
 require 'fileutils'
-require 'rexml/document'
 require 'kytoon/util'
 require 'base64'
+require 'ipaddr'
 
 module Kytoon
 
@@ -229,18 +228,30 @@ fi
 
   def self.init_host(sg)
 
+    cidr = IPAddr.new(sg.netmask).to_i.to_s(2).count("1")
+
     hosts_file_data = "127.0.0.1\tlocalhost localhost.localdomain\n"
     sg.servers.each do |server|
       hosts_file_data += "#{server['ip_address']}\t#{server['hostname']}\n"
     end
 
     Kytoon::Util.remote_exec(%{
+# Add first IP to bridge
+if ! ip a | grep #{sg.gateway}/#{cidr} | grep #{sg.bridge}; then
+  ip a add #{sg.gateway}/#{cidr} dev #{sg.bridge}
+fi
+
 cat > /etc/hosts <<-EOF_CAT
 #{hosts_file_data}
 EOF_CAT
 # FIXME... probably a bit insecure but most people are probably using
 # boxes behind another firewall anyway.
 iptables -F
+iptables -X
+iptables -t nat -F
+iptables -t nat -X
+iptables -t mangle -F
+iptables -t mangle -X
 iptables -P INPUT ACCEPT
 iptables -P FORWARD ACCEPT
 iptables -P OUTPUT ACCEPT
