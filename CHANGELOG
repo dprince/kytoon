@@ -1,0 +1,7 @@
+* Mon Jul 23 2012 Dan Prince <dprince@redhat.com> - 1.0.1
+  - Update ServerGroup to call init in all methods. Fixes NilClass errors
+    which can occur if you don't explicitly call 'group::init' in rake tasks.
+  - XenServer: Automatically add IP to bridge.
+
+* Sun Jul 22 2012 Dan Prince <dprince@redhat.com> - 1.0.0
+  - Initial release. Based on Chef VCP Toolkit.
