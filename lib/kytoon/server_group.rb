@@ -20,10 +20,12 @@ class ServerGroup
   end
 
   def self.index(options)
+    self.init
     @@group_class.index(options)
   end
 
   def self.create
+    self.init
     json_config_file=ENV['SERVER_GROUP_JSON']
     if json_config_file.nil? then
       json_config_file = @@group_class::CONFIG_FILE
@@ -33,11 +35,13 @@ class ServerGroup
   end
 
   def self.get
+    self.init
     id = ENV['GROUP_ID']
     @@group_class.get(:id => id)
   end
 
   def self.delete
+    self.init
     id = ENV['GROUP_ID']
     sg = @@group_class.get(:id => id)
     sg.delete
