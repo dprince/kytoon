@@ -299,7 +299,7 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
 
       for UUID in $(xe vm-list is-control-domain=false | grep uuid | sed -e 's|.*: ||'); do
       echo "Destroying Xen instance uuid: $UUID"
-      xe vm-shutdown uuid=$UUID
+      xe vm-shutdown force=true uuid=$UUID
       xe vm-destroy uuid=$UUID
       done
 

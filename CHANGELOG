@@ -1,3 +1,6 @@
+* Fri Jul 27 2012 Dan Prince <dprince@redhat.com> - 1.0.2
+  - XenServer: Use force=true when shutting down VMs.
+
 * Mon Jul 23 2012 Dan Prince <dprince@redhat.com> - 1.0.1
   - Update ServerGroup to call init in all methods. Fixes NilClass errors
     which can occur if you don't explicitly call 'group::init' in rake tasks.
