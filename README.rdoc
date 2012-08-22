@@ -1,17 +1,18 @@
 = Kytoon
 
-Create & configure ephemeral virtual private clouds
+Create small virtual server groups
 
 == Description
 
-A set of Rake tasks that provide a framework to help automate the creation and configuration of “identical” VPC server groups. Kytoon provides the ability to create projects that can be used by team members and continuous integration systems to spin up groups of servers for development and/or testing. Configuration information is stored in JSON and YAML formats which can be easily parsed, edited, and version controlled.
+A set of Rake tasks that provide a framework to help automate the creation and configuration of virtual server groups. Kytoon provides the ability to create projects that can be used by team members and continuous integration systems to create similar (if not identical) groups of servers for development and/or testing. Configuration information is stored in JSON and YAML formats which can be easily parsed, edited, and version controlled.
 
 Inspired by and based on the Chef VPC Toolkit.
 
 == Supports
 
-- Cloud Servers VPC (Rackspace and OpenStack)
-- XenServer
+- Libvirt: manage instances on local machine w/ libvirt, virt-clone, and libguestfs
+- XenServer: manage instances on a remote XenServer box (via ssh)
+- Cloud Servers VPC: API driven. Supports Rackspace and OpenStack
 
 == Installation
 
@@ -27,8 +28,9 @@ Inspired by and based on the Chef VPC Toolkit.
 3) Create a .kytoon.conf file in your HOME directory that contains the following:
 
 	# Set one of the following group_types
-	group_type: cloud_server_vpc
+	group_type: libvirt
 	#group_type: xenserver
+	#group_type: cloud_server_vpc
 
 	# Cloud Servers VPC credentials
 	cloud_servers_vpc_url: https://your.vpc.url/
@@ -65,10 +67,16 @@ Example commands:
 The following is an example bash script to spin up a group and run commands via SSH.
 
         #!/bin/bash
+        # override the group type specified in .kytoon.conf
+        export GROUP_TYPE=libvirt
+
         trap "rake group:delete" INT TERM EXIT # cleanup the group on exit
 
-        # create a server group
+        # create a server group (uses config/server_group.json)
         rake group:create
+
+        # create a server group with alternate json file
+        rake group:create SERVER_GROUP_JSON=config/my_group.json
 
         # Run some scripts on the login server
         rake ssh bash <<-EOF_BASH
