@@ -2,6 +2,7 @@ $:.unshift File.dirname(__FILE__)
 require 'test_helper'
 
 require 'tempfile'
+require 'kytoon/providers/cloud_servers_vpc'
 
 module Kytoon
 module Vpn

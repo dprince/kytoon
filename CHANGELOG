@@ -1,3 +1,7 @@
+* Wed Aug 22 2012 Dan Prince <dprince@redhat.com> - 1.1.1
+  - Add 'libvirt_use_sudo' option to config file.
+  - Move config parameter checks into specific providers.
+
 * Wed Aug 22 2012 Dan Prince <dprince@redhat.com> - 1.1.0
   - Add local libvirt provider based on virt-clone.
   - Libvirt: Support creating qcow2 disks during group creation.

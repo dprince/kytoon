@@ -1,7 +1,3 @@
-require 'kytoon/providers/cloud_servers_vpc'
-require 'kytoon/providers/libvirt'
-require 'kytoon/providers/xenserver'
-
 class ServerGroup
 
   @@group_class = nil
@@ -12,10 +8,13 @@ class ServerGroup
     configs = Util.load_configs
     group_type = ENV['GROUP_TYPE'] || configs['group_type']
     if group_type == "cloud_server_vpc" then
+        require 'kytoon/providers/cloud_servers_vpc'
         @@group_class = Kytoon::Providers::CloudServersVPC::ServerGroup
     elsif group_type == "xenserver" then
+        require 'kytoon/providers/xenserver'
         @@group_class = Kytoon::Providers::Xenserver::ServerGroup
     elsif group_type == "libvirt" then
+        require 'kytoon/providers/libvirt'
         @@group_class = Kytoon::Providers::Libvirt::ServerGroup
     else
         raise "Invalid 'group_type' specified in config file."

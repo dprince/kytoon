@@ -1,5 +1,6 @@
 $:.unshift File.dirname(__FILE__)
 require 'test_helper'
+require 'kytoon/providers/cloud_servers_vpc'
 
 module Kytoon
 module Providers

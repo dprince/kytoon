@@ -30,9 +30,6 @@ module Util
 
     if File.exists?(config_file) then
       configs=YAML.load_file(config_file)
-      raise_if_nil_or_empty(configs, "cloud_servers_vpc_url")
-      raise_if_nil_or_empty(configs, "cloud_servers_vpc_username")
-      raise_if_nil_or_empty(configs, "cloud_servers_vpc_password")
       @@configs=configs
     else
       raise "Failed to load kytoon config file. Please configure /etc/kytoon.conf or create a .kytoon.conf config file in your HOME directory."
@@ -57,9 +54,10 @@ module Util
 
   end
 
-  def self.raise_if_nil_or_empty(options, key)
-    if not options or options[key].nil? or options[key].empty? then
-      raise "Please specify a valid #{key.to_s} parameter."
+  def self.check_config_param(key)
+    configs = load_configs
+    if not configs or configs[key].nil? or configs[key].empty? then
+      raise "Please specify '#{key.to_s}' in your kytoon config file."
     end
   end
 
