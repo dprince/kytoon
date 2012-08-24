@@ -33,10 +33,12 @@ class ServerGroup
 
   attr_accessor :id
   attr_accessor :name
+  attr_accessor :use_sudo
 
   def initialize(options={})
     @id = options[:id] || Time.now.to_i
     @name = options[:name]
+    @use_sudo = options[:use_sudo]
     @servers=[]
     end
 
@@ -57,9 +59,13 @@ class ServerGroup
 
     json_hash=JSON.parse(json)
 
+    configs = Util.load_configs
+    use_sudo = ENV['LIBVIRT_USE_SUDO'] || configs['libvirt_use_sudo']
+
     sg=ServerGroup.new(
       :id => json_hash["id"],
-      :name => json_hash["name"]
+      :name => json_hash["name"],
+      :use_sudo => use_sudo
     )
     json_hash["servers"].each do |server_hash|
 
@@ -125,16 +131,18 @@ class ServerGroup
   end
 
   def delete
+    sudo = @use_sudo =~ /(true|t|yes|y|1)$/i ? "sudo" : ""
     servers.each do |server|
-      ServerGroup.cleanup_instances(@id, server['hostname'], server['disk_path'])
+      ServerGroup.cleanup_instances(@id, server['hostname'], server['disk_path'], sudo)
     end
     out_file=File.join(@@data_dir, "#{@id}.json")
     File.delete(out_file) if File.exists?(out_file)
   end
 
   def self.create(sg)
-    ssh_public_key = Kytoon::Util.load_public_key
 
+    ssh_public_key = Kytoon::Util.load_public_key
+    sudo = sg.use_sudo =~ /(true|t|yes|y|1)$/i ? "sudo" : ""
     hosts_file_data = "127.0.0.1\tlocalhost localhost.localdomain\n"
     sg.servers.each do |server|
 
@@ -142,7 +150,7 @@ class ServerGroup
       disk_path=File.join(image_dir, "#{sg.id}_#{server['hostname']}.img")
       server['disk_path'] = disk_path
 
-      instance_ip = create_instance(sg.id, server['hostname'], server['memory'], server['original'], server['original_xml'], disk_path, server['create_cow'], ssh_public_key)
+      instance_ip = create_instance(sg.id, server['hostname'], server['memory'], server['original'], server['original_xml'], disk_path, server['create_cow'], ssh_public_key, sudo)
       server['ip_address'] = instance_ip
       hosts_file_data += "#{instance_ip}\t#{server['hostname']}\n"
       sg.cache_to_disk
@@ -218,7 +226,7 @@ fi
     raise "Unable to find disk path for instance."
   end
 
-  def self.create_instance(group_id, inst_name, memory_gigs, original, original_xml, disk_path, create_cow, ssh_public_key)
+  def self.create_instance(group_id, inst_name, memory_gigs, original, original_xml, disk_path, create_cow, ssh_public_key, sudo)
 
     puts "Creating instance: #{inst_name}"
     instance_memory = (KIB_PER_GIG * memory_gigs.to_f).to_i
@@ -240,7 +248,7 @@ fi
 
 if [ -n "#{create_cow}" ]; then
 
-  virt-clone --connect="$VIRSH_DEFAULT_CONNECT_URI" \
+  #{sudo} virt-clone --connect="$VIRSH_DEFAULT_CONNECT_URI" \
     --name '#{domain_name}' \
     --file '#{disk_path}' \
     --force \
@@ -248,11 +256,11 @@ if [ -n "#{create_cow}" ]; then
     --preserve-data \
     || { echo "failed to virt-clone"; exit 1; }
 
-  qemu-img create -f qcow2 -o backing_file=#{original_disk_path} "#{disk_path}"
+  #{sudo} qemu-img create -f qcow2 -o backing_file=#{original_disk_path} "#{disk_path}"
 
 else
 
-  virt-clone --connect="$VIRSH_DEFAULT_CONNECT_URI" \
+  #{sudo} virt-clone --connect="$VIRSH_DEFAULT_CONNECT_URI" \
     --name '#{domain_name}' \
     --file '#{disk_path}' \
     --force \
@@ -261,10 +269,10 @@ else
 
 fi
 
-LV_ROOT=$(virt-filesystems -a #{disk_path} --logical-volumes | grep root)
+LV_ROOT=$(#{sudo} virt-filesystems -a #{disk_path} --logical-volumes | grep root)
 # If using LVM we inject the ssh key this way
 if [ -n "$LV_ROOT" ]; then
-  guestfish --selinux add #{disk_path} : \
+  #{sudo} guestfish --selinux add #{disk_path} : \
     run : \
     mount $LV_ROOT / : \
     sh "/bin/mkdir -p /root/.ssh" : \
@@ -272,9 +280,9 @@ if [ -n "$LV_ROOT" ]; then
     sh "/bin/chmod -R 700 /root/.ssh"
 fi
 
-virsh setmaxmem #{domain_name} #{instance_memory}
-virsh start #{domain_name}
-virsh setmem #{domain_name} #{instance_memory}
+#{sudo} virsh setmaxmem #{domain_name} #{instance_memory}
+#{sudo} virsh start #{domain_name}
+#{sudo} virsh setmem #{domain_name} #{instance_memory}
 
     }
     retval=$?
@@ -285,7 +293,7 @@ virsh setmem #{domain_name} #{instance_memory}
 
     # lookup server IP here... 
     mac_addr = nil
-    dom_xml = %x{virsh --connect=qemu:///system dumpxml #{domain_name}}
+    dom_xml = %x{#{sudo} virsh --connect=qemu:///system dumpxml #{domain_name}}
     dom = REXML::Document.new(dom_xml)
     REXML::XPath.each(dom, "//interface/mac") do |interface_xml|
       mac_addr = interface_xml.attributes['address']
@@ -306,21 +314,21 @@ virsh setmem #{domain_name} #{instance_memory}
 
   end
 
-  def self.cleanup_instances(group_id, inst_name, disk_path)
+  def self.cleanup_instances(group_id, inst_name, disk_path, sudo)
     domain_name="#{group_id}_#{inst_name}"
     out = %x{
 if [ -n "$DEBUG" ]; then
 set -x
 fi
 export VIRSH_DEFAULT_CONNECT_URI="qemu:///system"
-if virsh dumpxml #{domain_name} &> /dev/null; then
-  virsh destroy "#{domain_name}" &> /dev/null
-  virsh undefine "#{domain_name}"
+if #{sudo} virsh dumpxml #{domain_name} &> /dev/null; then
+  #{sudo} virsh destroy "#{domain_name}" &> /dev/null
+  #{sudo} virsh undefine "#{domain_name}"
 fi
 # If we used --preserve-data there will be no volume... ignore it
-virsh vol-delete --pool default "#{group_id}_#{inst_name}.img" &> /dev/null
+#{sudo} virsh vol-delete --pool default "#{group_id}_#{inst_name}.img" &> /dev/null
 if [ -f "#{disk_path}" ]; then
-  rm -f "#{disk_path}"
+  #{sudo} rm -f "#{disk_path}"
 fi
     }
     puts out
