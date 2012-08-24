@@ -12,7 +12,7 @@ Inspired by and based on the Chef VPC Toolkit.
 
 - Libvirt: manage instances on local machine w/ libvirt, virt-clone, and libguestfs
 - XenServer: manage instances on a remote XenServer box (via ssh)
-- Cloud Servers VPC: API driven. Supports Rackspace and OpenStack
+- Cloud Servers VPC: API driven. Supports Rackspace Cloud and OpenStack.
 
 == Installation
 
@@ -27,10 +27,23 @@ Inspired by and based on the Chef VPC Toolkit.
 
 3) Create a .kytoon.conf file in your HOME directory that contains the following:
 
-	# Set one of the following group_types
+For libvirt:
+
+	# The default group type. Override with GROUP_TYPE
 	group_type: libvirt
-	#group_type: xenserver
-	#group_type: cloud_server_vpc
+
+	# Whether commands to create local group should use sudo
+	libvirt_use_sudo: False
+
+For XenServer:
+
+	# The default group type. Override with GROUP_TYPE
+	group_type: xenserver
+
+For Cloud Servers VPC:
+
+	# The default group type. Override with GROUP_TYPE
+	group_type: cloud_servers_vpc
 
 	# Cloud Servers VPC credentials
 	cloud_servers_vpc_url: https://your.vpc.url/
