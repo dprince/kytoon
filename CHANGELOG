@@ -1,4 +1,4 @@
-* Wed Aug 22 2012 Dan Prince <dprince@redhat.com> - 1.1.1
+* Thu Aug 23 2012 Dan Prince <dprince@redhat.com> - 1.1.1
   - Add 'libvirt_use_sudo' option to config file.
   - Move config parameter checks into specific providers.
 
