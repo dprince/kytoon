@@ -39,17 +39,22 @@ module Util
 
   end
 
-  def self.load_public_key
+  def self.public_key_path
 
-    ssh_dir=ENV['HOME']+File::SEPARATOR+".ssh"+File::SEPARATOR
-    if File.exists?(ssh_dir+"id_rsa.pub")
-      pubkey=IO.read(ssh_dir+"id_rsa.pub")
-    elsif File.exists?(ssh_dir+"id_dsa.pub")
-      pubkey=IO.read(ssh_dir+"id_dsa.pub")
+    ssh_dir=File.join(ENV['HOME'], ".ssh")
+    if File.exists?(File.join(ssh_dir, "id_rsa.pub"))
+      File.join(ssh_dir, "id_rsa.pub")
+    elsif File.exists?(File.join(ssh_dir, "id_dsa.pub"))
+      File.join(ssh_dir, "id_dsa.pub")
     else
       raise "Failed to load SSH key. Please create a SSH public key pair in your HOME directory."
     end
 
+  end
+
+  def self.load_public_key
+
+    pubkey=IO.read(self.public_key_path)
     pubkey.chomp
 
   end

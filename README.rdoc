@@ -27,6 +27,20 @@ Inspired by and based on the Chef VPC Toolkit.
 
 3) Create a .kytoon.conf file in your HOME directory that contains the following:
 
+For OpenStack:
+
+	# The default group type. Override with GROUP_TYPE
+	group_type: openstack
+
+	# Openstack Settings
+	openstack_url: <auth_url>
+	openstack_username: <username>
+	openstack_password: <password>
+	openstack_keypair_name: < keyname > Optional: file injection via personalities is the default
+	openstack_ip_type: < iptype > Optional: defaults to 4
+	openstack_build_timeout: < seconds > Server build timeout. Defaults to: 480
+	openstack_ping_timeout: < seconds > Server build timeout. Defaults to: 60
+
 For libvirt:
 
 	# The default group type. Override with GROUP_TYPE
