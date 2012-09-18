@@ -153,12 +153,13 @@ The following options are supported on the command line:
 
 To include Kytoon rake tasks in your own project add the following to your
 Rakefile:
+
 	KYTOON_PROJECT = "#{File.dirname(__FILE__)}" unless defined?(KYTOON_PROJECT)
 	require 'rubygems'
 	require 'kytoon'
 	include Kytoon
 	Dir[File.join("#{Kytoon::Version::KYTOON_ROOT}/rake", '*.rake')].each do  |rakefile|
-	    import(rakefile)
+		import(rakefile)
 	end
 
 ## Rake Tasks
