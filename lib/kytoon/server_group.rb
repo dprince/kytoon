@@ -52,12 +52,12 @@ class ServerGroup
     @@group_class.create(sg)
   end
 
-  def self.get(id)
+  def self.get(id=nil)
     self.init
     @@group_class.get(:id => id)
   end
 
-  def self.delete(id)
+  def self.delete(id=nil)
     self.init
     sg = @@group_class.get(:id => id)
     sg.delete
