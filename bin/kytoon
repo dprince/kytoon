@@ -2,6 +2,6 @@
 require "rubygems"
 require "kytoon"
 
-KYTOON_PROJECT = "#{File.join(File.dirname(__FILE__), '..')}" unless defined?(KYTOON_PROJECT)
+KYTOON_PROJECT = ENV['PWD']
 
 Kytoon::ThorTasks.start
