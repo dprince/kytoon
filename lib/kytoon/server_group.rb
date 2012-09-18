@@ -1,12 +1,14 @@
+module Kytoon
+
 class ServerGroup
 
   @@group_class = nil
 
   # called to init the configured group class we will use
-  def self.init
+  def self.init(group_type=nil)
     return if not @@group_class.nil?
     configs = Util.load_configs
-    group_type = ENV['GROUP_TYPE'] || configs['group_type']
+    group_type = configs['group_type'] if group_type.nil?
     if group_type == "openstack" then
         require 'kytoon/providers/openstack'
         @@group_class = Kytoon::Providers::Openstack::ServerGroup
@@ -20,36 +22,47 @@ class ServerGroup
         require 'kytoon/providers/cloud_servers_vpc'
         @@group_class = Kytoon::Providers::CloudServersVPC::ServerGroup
     else
-        raise "Invalid 'group_type' specified in config file."
+        raise ConfigException, "Invalid 'group_type' specified."
     end
   end
 
-  def self.index(options)
+  def self.index(options={})
     self.init
-    @@group_class.index(options)
+    server_groups = @@group_class.index(options)
+    if server_groups.size > 0
+      puts "Server groups:"
+      server_groups.sort { |a,b| b.id <=> a.id }.each do |sg|
+        gw=sg.gateway_ip.nil? ? "" : " (#{sg.gateway_ip})"
+        puts "\t :id => #{sg.id}, :name => #{sg.name} #{gw}"
+      end
+    else
+      puts "No server groups."
+    end
   end
 
-  def self.create
+  def self.create(config_file)
     self.init
-    json_config_file=ENV['SERVER_GROUP_JSON']
-    if json_config_file.nil? then
-      json_config_file = @@group_class::CONFIG_FILE
+    if config_file.nil? then
+      config_file = @@group_class::CONFIG_FILE
     end
-    sg = @@group_class.from_json(IO.read(json_config_file))
+    if not File.exists?(config_file) then
+      raise ConfigException, "Please specify a valid GROUP_CONFIG."
+    end
+    sg = @@group_class.from_json(IO.read(config_file))
     @@group_class.create(sg)
   end
 
-  def self.get
+  def self.get(id)
     self.init
-    id = ENV['GROUP_ID']
     @@group_class.get(:id => id)
   end
 
-  def self.delete
+  def self.delete(id)
     self.init
-    id = ENV['GROUP_ID']
     sg = @@group_class.get(:id => id)
     sg.delete
   end
+
+end
 
 end

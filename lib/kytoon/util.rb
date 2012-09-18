@@ -32,7 +32,7 @@ module Util
       configs=YAML.load_file(config_file)
       @@configs=configs
     else
-      raise "Failed to load kytoon config file. Please configure /etc/kytoon.conf or create a .kytoon.conf config file in your HOME directory."
+      raise ConfigException, "Failed to load kytoon config file. Please configure /etc/kytoon.conf or create a .kytoon.conf config file in your HOME directory."
     end
 
     @@configs
@@ -47,7 +47,7 @@ module Util
     elsif File.exists?(File.join(ssh_dir, "id_dsa.pub"))
       File.join(ssh_dir, "id_dsa.pub")
     else
-      raise "Failed to load SSH key. Please create a SSH public key pair in your HOME directory."
+      raise ConfigException, "Failed to load SSH key. Please create a SSH public key pair in your HOME directory."
     end
 
   end
@@ -62,7 +62,7 @@ module Util
   def self.check_config_param(key)
     configs = load_configs
     if not configs or configs[key].nil? or configs[key].empty? then
-      raise "Please specify '#{key.to_s}' in your kytoon config file."
+      raise ConfigException, "Please specify '#{key.to_s}' in your kytoon config file."
     end
   end
 

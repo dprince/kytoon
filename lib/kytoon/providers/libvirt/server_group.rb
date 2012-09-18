@@ -170,7 +170,7 @@ fi
       }, server['ip_address']) do |ok, out|
         if not ok
           puts out
-          raise "Failed to copy host file to instance #{server['hostname']}."
+          raise KytoonException, "Failed to copy host file to instance #{server['hostname']}."
         end
       end
     end
@@ -182,12 +182,12 @@ fi
     id = options[:id]
     if id.nil? then
       group=ServerGroup.most_recent
-      raise "No server group files exist." if group.nil?
+      raise NoServerGroupExists, "No server group files exist." if group.nil?
       id=group.id
     end
 
     out_file=File.join(@@data_dir, "#{id}.json")
-    raise "No server group files exist." if not File.exists?(out_file)
+    raise NoServerGroupExists, "No server group files exist." if not File.exists?(out_file)
     ServerGroup.from_json(IO.read(out_file))
   end
 
@@ -223,7 +223,7 @@ fi
     REXML::XPath.each(dom, "//disk[1]/source") do |source_xml|
       return source_xml.attributes['file']
     end
-    raise "Unable to find disk path for instance."
+    raise KytoonException, "Unable to find disk path for instance."
   end
 
   def self.create_instance(group_id, inst_name, memory_gigs, original, original_xml, disk_path, create_cow, ssh_public_key, sudo)
@@ -288,7 +288,7 @@ fi
     retval=$?
     if not retval.success? 
       puts out
-      raise "Failed to create instance #{inst_name}."
+      raise KytoonException, "Failed to create instance #{inst_name}."
     end
 
     # lookup server IP here... 
@@ -298,7 +298,7 @@ fi
     REXML::XPath.each(dom, "//interface/mac") do |interface_xml|
       mac_addr = interface_xml.attributes['address']
     end
-    raise "Failed to lookup mac address for #{inst_name}" if mac_addr.nil?
+    raise KytoonException, "Failed to lookup mac address for #{inst_name}" if mac_addr.nil?
 
     instance_ip = %x{grep -i #{mac_addr} /var/lib/libvirt/dnsmasq/default.leases | cut -d " " -f 3}.chomp
     count = 0
@@ -307,7 +307,7 @@ fi
       sleep 1
       count += 1
       if count >= 60 then
-          raise "Failed to lookup ip address for #{inst_name}"
+          raise KytoonException, "Failed to lookup ip address for #{inst_name}"
       end
     end
     return instance_ip
@@ -335,7 +335,7 @@ fi
     retval=$?
     if not retval.success? 
       puts out
-      raise "Failed to cleanup instances."
+      raise KytoonException, "Failed to cleanup instances."
     end
   end
 

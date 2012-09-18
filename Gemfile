@@ -10,6 +10,7 @@ group :development do
   gem "bundler", "~> 1.1.4"
   gem "builder", "~> 3.0.0"
   gem "jeweler", "~> 1.8.3"
+  gem "thor", "~> 0.14"
   gem "uuidtools", "~> 2.1.2"
   gem "mocha", "~> 0.12.1"
 end

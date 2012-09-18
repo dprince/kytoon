@@ -1,5 +1,7 @@
 require 'kytoon/util'
 require 'kytoon/ssh_util'
+require 'kytoon/thor_tasks'
+require 'kytoon/exception'
 require 'kytoon/version'
 require 'kytoon/xml_util'
 require 'kytoon/server_group'

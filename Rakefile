@@ -18,18 +18,19 @@ Rake::Task['test'].comment = "Unit"
 
 begin
   require 'jeweler'
-  Jeweler::Tasks.new do |gemspec|
-    gemspec.name = "kytoon"
-    gemspec.summary = "Create & configure ephemeral virtual private clouds."
-    gemspec.description = "A set of Rake tasks that provide a framework to help automate the creation and configuration of VPC server groups."
-    gemspec.email = "dprince@redhat.com"
-    gemspec.homepage = "http://github.com/dprince/kytoon"
-    gemspec.authors = ["Dan Prince"]
-    gemspec.add_dependency 'rake'
-    gemspec.add_dependency 'builder'
-    gemspec.add_dependency 'json'
-    gemspec.add_dependency 'openstack-compute'
-    gemspec.add_dependency 'uuidtools'
+  Jeweler::Tasks.new do |gem|
+    gem.name = "kytoon"
+    gem.summary = "Create & configure ephemeral virtual private clouds."
+    gem.description = "A set of Rake tasks that provide a framework to help automate the creation and configuration of VPC server groups."
+    gem.email = "dprince@redhat.com"
+    gem.homepage = "http://github.com/dprince/kytoon"
+    gem.authors = ["Dan Prince"]
+    gem.add_dependency 'rake'
+    gem.add_dependency 'builder'
+    gem.add_dependency 'json'
+    gem.add_dependency 'openstack-compute'
+    gem.add_dependency 'thor'
+    gem.add_dependency 'uuidtools'
   end
 rescue LoadError
   puts "Jeweler not available. Install it with: sudo gem install jeweler"

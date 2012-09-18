@@ -149,7 +149,7 @@ class ServerGroup
         end
       end
     rescue Timeout::Error => te
-      raise "Timeout building server group."
+      raise KytoonException, "Timeout building server group."
     end
 
 
@@ -168,7 +168,7 @@ fi
       }, server['ip_address']) do |ok, out|
         if not ok
           puts out
-          raise "Failed to copy host file to instance #{server['hostname']}."
+          raise KytoonException, "Failed to copy host file to instance #{server['hostname']}."
         end
       end
     end
@@ -181,12 +181,12 @@ fi
     id = options[:id]
     if id.nil? then
       group=ServerGroup.most_recent
-      raise "No server group files exist." if group.nil?
+      raise NoServerGroupExists, "No server group files exist." if group.nil?
       id=group.id
     end
 
     out_file=File.join(@@data_dir, "#{id}.json")
-    raise "No server group files exist." if not File.exists?(out_file)
+    raise NoServerGroupExists, "No server group files exist." if not File.exists?(out_file)
     ServerGroup.from_json(IO.read(out_file))
   end
 
@@ -289,7 +289,7 @@ fi
         end
       end
     rescue Timeout::Error => te
-      raise "Timeout pinging server: #{ping_command}"
+      raise KytoonException, "Timeout pinging server: #{ping_command}"
     end
 
     return false

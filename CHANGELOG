@@ -1,5 +1,9 @@
 * Mon Sep 17 2012 Dan Prince <dprince@redhat.com> - 1.2.0
   - Add provider for OpenStack.
+  - Add bin/kytoon with commands corresponding to rake tasks.
+  - Move rake tasks under 'kytoon' namespace (previously used 'group').
+  - Updates to raise KytoonException instead of just raise.
+  - Rename gateway_ip task to just ip.
 
 * Thu Aug 23 2012 Dan Prince <dprince@redhat.com> - 1.1.1
   - Add 'libvirt_use_sudo' option to config file.

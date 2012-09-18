@@ -61,7 +61,7 @@ class ServerGroup
     @dns_nameserver = options[:dns_nameserver]
     @gateway_ip = options[:gateway_ip]
     @gateway_ip = ENV['GATEWAY_IP'] if @gateway_ip.nil?
-    raise "Please specify a GATEWAY_IP" if @gateway_ip.nil?
+    raise ConfigException, "Please specify a GATEWAY_IP" if @gateway_ip.nil?
 
     @servers=[]
     end
@@ -195,12 +195,12 @@ fi
     id = options[:id]
     if id.nil? then
       group=ServerGroup.most_recent
-      raise "No server group files exist." if group.nil?
+      raise NoServerGroupExists, "No server group files exist." if group.nil?
       id=group.id
     end
 
     out_file=File.join(@@data_dir, "#{id}.json")
-    raise "No server group files exist." if not File.exists?(out_file)
+    raise NoServerGroupExists, "No server group files exist." if not File.exists?(out_file)
     ServerGroup.from_json(IO.read(out_file))
   end
 
@@ -287,7 +287,7 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
     }, gw_ip) do |ok, out|
       if not ok
         puts out
-        raise "Failed to create instance #{hostname}."
+        raise KytoonException, "Failed to create instance #{hostname}."
       end
     end
   end

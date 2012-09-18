@@ -1,72 +1,60 @@
 include Kytoon
 
-namespace :group do
+namespace :kytoon do
   TMP_SG=File.join(KYTOON_PROJECT, 'tmp', 'server_groups')
 
   directory TMP_SG
 
   task :init => [TMP_SG] do
-      ServerGroup.init
-    end
+      ServerGroup.init(ENV['GROUP_TYPE'])
+  end
 
-  desc "Create a new group of cloud servers"
-  task :create => [ "init" ] do
-    sg = ServerGroup.create
+  desc "Create a new group of servers"
+  task :create do
+    sg = ServerGroup.create(ENV['GROUP_CONFIG'])
     puts "Server group ID #{sg.id} created."
   end
 
-  desc "List existing cloud server groups."
-  task :list => "init" do
-
-    server_groups=nil
-    server_groups=ServerGroup.index(:source => "cache")
-    if server_groups.size > 0
-      puts "Server groups:"
-      server_groups.sort { |a,b| b.id <=> a.id }.each do |sg|
-        gw=sg.gateway_ip.nil? ? "" : " (#{sg.gateway_ip})"
-        puts "\t :id => #{sg.id}, :name => #{sg.name} #{gw}"
-      end
-    else
-      puts "No server groups."
-    end
-
+  desc "List existing server groups."
+  task :list do
+    ServerGroup.index(:source => "cache")
   end
 
-  desc "Print information for a cloud server group"
-  task :show => [ "init" ] do
-    sg = ServerGroup.get
+  desc "Print information for a server group"
+  task :show do
+    sg = ServerGroup.get(ENV['GROUP_ID'])
     sg.pretty_print
   end
 
-  desc "Delete a cloud server group"
-  task :delete => ["init"] do
+  desc "Delete a server group"
+  task :delete do
 
-    sg = ServerGroup.get
-    puts "Deleting cloud server group ID: #{sg.id}."
+    sg = ServerGroup.get(ENV['GROUP_ID'])
+    puts "Deleting server group ID: #{sg.id}."
     sg.delete
     SshUtil.remove_known_hosts_ip(sg.gateway_ip)
 
   end
 
-  desc "Print the VPN gateway IP address"
-  task :gateway_ip do
-    group = ServerGroup.get
+  desc "Print the gateway IP address"
+  task :ip do
+    group = ServerGroup.get(ENV['GROUP_ID'])
     puts group.gateway_ip
   end
 
-end
+  desc "SSH into the most recently created server group."
+  task :ssh => 'kytoon:init' do
 
-desc "SSH into the most recently created VPN gateway server."
-task :ssh => 'group:init' do
-
-  sg=ServerGroup.get
-  args=ARGV[1, ARGV.length].join(" ")
-  if (ARGV[1] and ARGV[1] =~ /^GROUP_.*/) and (ARGV[2] and ARGV[2] =~ /^GROUP_.*/)
-    args=ARGV[3, ARGV.length].join(" ")
-  elsif ARGV[1] and ARGV[1] =~ /^GROUP_.*/
-    args=ARGV[2, ARGV.length].join(" ")
+    sg=ServerGroup.get(ENV['GROUP_ID'])
+    args=ARGV[1, ARGV.length].join(" ")
+    if (ARGV[1] and ARGV[1] =~ /^GROUP_.*/) and (ARGV[2] and ARGV[2] =~ /^GROUP_.*/)
+      args=ARGV[3, ARGV.length].join(" ")
+    elsif ARGV[1] and ARGV[1] =~ /^GROUP_.*/
+      args=ARGV[2, ARGV.length].join(" ")
+    end
+    exec("ssh -o \"StrictHostKeyChecking no\" root@#{sg.gateway_ip} #{args}")
   end
-  exec("ssh -o \"StrictHostKeyChecking no\" root@#{sg.gateway_ip} #{args}")
+
 end
 
 desc "Print help and usage information"
@@ -81,34 +69,30 @@ task :usage do
   puts "----"
   puts "Example commands:"
   puts ""
-  puts "\t- Create a new server group."
+  puts "\t- Create a new server group with default config file"
+  puts "\t  (config/server_group.json)."
   puts ""
-  puts "\t\t$ rake group:create"
+  puts "\t$ rake kytoon:create"
 
   puts ""
   puts "\t- List your currently running server groups."
   puts ""
-  puts "\t\t$ rake group:list"
-
-  puts ""
-  puts "\t- List all remote groups using a common Cloud Servers VPC account."
-  puts ""
-  puts "\t\t$ rake group:list"
+  puts "\t$ rake kytoon:list"
 
   puts ""
   puts "\t- SSH into the current (most recently created) server group."
   puts ""
-  puts "\t\t$ rake ssh"
+  puts "\t$ rake ssh"
 
   puts ""
   puts "\t- SSH into a server group with an ID of 3."
   puts ""
-  puts "\t\t$ rake ssh GROUP_ID=3"
+  puts "\t$ rake ssh GROUP_ID=3"
 
   puts ""
   puts "\t- Delete the server group with an ID of 3."
   puts ""
-  puts "\t\t$ rake group:delete GROUP_ID=3"
+  puts "\t$ rake kytoon:delete GROUP_ID=3"
 
 end
 
