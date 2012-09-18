@@ -61,7 +61,7 @@ module Util
 
   def self.check_config_param(key)
     configs = load_configs
-    if not configs or configs[key].nil? or configs[key].empty? then
+    if not configs or configs[key].nil? or configs[key].to_s.empty? then
       raise ConfigException, "Please specify '#{key.to_s}' in your kytoon config file."
     end
   end

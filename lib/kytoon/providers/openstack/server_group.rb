@@ -61,7 +61,7 @@ class ServerGroup
         'hostname' => server_hash['hostname'],
         'image_ref' => server_hash['image_ref'],
         'flavor_ref' => server_hash['flavor_ref'],
-        'keypair' => server_hash['keypair'],
+        'keypair_name' => server_hash['keypair_name'],
         'gateway' => server_hash['gateway'] || "false",
         'ip_address' => server_hash['ip_address']
       }
@@ -132,7 +132,7 @@ class ServerGroup
     build_timeout = (Util.load_configs['openstack_build_timeout'] || 60).to_i
 
     sg.servers.each do |server|
-      server_id = create_instance(sg.id, server['hostname'], server['image_ref'], server['flavor_ref']).id
+      server_id = create_instance(sg.id, server['hostname'], server['image_ref'], server['flavor_ref'], server['keypair_name']).id
 
       server['id'] = server_id
       sg.cache_to_disk
@@ -216,8 +216,8 @@ fi
     configs = Util.load_configs
     if @@connection.nil? then
       @@connection = OpenStack::Compute::Connection.new(
-        :username => configs['openstack_username'],
-        :api_key => configs['openstack_password'],
+        :username => configs['openstack_username'].to_s,
+        :api_key => configs['openstack_password'].to_s,
         :auth_url => configs['openstack_url'],
         :retry_auth => false)
     else
@@ -225,7 +225,7 @@ fi
     end
   end
 
-  def self.create_instance(group_id, hostname, image_ref, flavor_ref)
+  def self.create_instance(group_id, hostname, image_ref, flavor_ref, keypair_name)
 
     ssh_public_key = Util.public_key_path
     configs = Util.load_configs
@@ -239,9 +239,9 @@ fi
       :personality => {ssh_public_key => "/root/.ssh/authorized_keys"},
       :is_debug => true}
 
-    key_name = configs['openstack_key_name']
-    if not key_name.nil? and not key_name.empty? then
-      options.store(:key_name, key_name)
+    keypair_name = configs['openstack_keypair_name'] if keypair_name.nil?
+    if not keypair_name.nil? and not keypair_name.empty? then
+      options.store(:key_name, keypair_name)
     end
 
     conn.create_server(options)
@@ -256,6 +256,9 @@ fi
   def self.get_server_ips()
 
     ips = {}
+    configs = Util.load_configs
+
+    network_name = configs['openstack_network_name'] || 'public'
 
     conn = self.init_connection
     all_active = false
@@ -264,7 +267,7 @@ fi
       conn.servers.each do |server|
         server = conn.server(server[:id])
         if server.status == 'ACTIVE' and ips[server.id].nil? then
-          addresses = server.addresses[:public].select {|a| a.version == self.default_ip_type}
+          addresses = server.addresses[network_name.to_sym].select {|a| a.version == self.default_ip_type}
           ips[server.id] = addresses[0].address
         else
           all_active = false
