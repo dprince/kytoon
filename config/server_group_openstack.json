@@ -1,0 +1,12 @@
+{
+    "name": "Fedora",
+    "servers": [
+        {
+            "hostname": "nova1",
+            "image_ref": "1234",
+            "flavor_ref": "5678",
+            "gateway": "true",
+            "keypair": "test"
+        }
+    ]
+}
