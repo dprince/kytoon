@@ -5,7 +5,7 @@ class ServerGroup
   @@group_class = nil
 
   # called to init the configured group class we will use
-  def self.init(group_type=nil)
+  def self.init(group_type=ENV['GROUP_TYPE'])
     return if not @@group_class.nil?
     configs = Util.load_configs
     group_type = configs['group_type'] if group_type.nil?
