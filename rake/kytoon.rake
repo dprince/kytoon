@@ -10,24 +10,24 @@ namespace :kytoon do
   end
 
   desc "Create a new group of servers"
-  task :create do
+  task :create => 'kytoon:init' do
     sg = ServerGroup.create(ENV['GROUP_CONFIG'])
     puts "Server group ID #{sg.id} created."
   end
 
   desc "List existing server groups."
-  task :list do
+  task :list => 'kytoon:init' do
     ServerGroup.index(:source => "cache")
   end
 
   desc "Print information for a server group"
-  task :show do
+  task :show => 'kytoon:init' do
     sg = ServerGroup.get(ENV['GROUP_ID'])
     sg.pretty_print
   end
 
   desc "Delete a server group"
-  task :delete do
+  task :delete => 'kytoon:init' do
 
     sg = ServerGroup.get(ENV['GROUP_ID'])
     puts "Deleting server group ID: #{sg.id}."
@@ -37,7 +37,7 @@ namespace :kytoon do
   end
 
   desc "Print the gateway IP address"
-  task :ip do
+  task :ip => 'kytoon:init' do
     group = ServerGroup.get(ENV['GROUP_ID'])
     puts group.gateway_ip
   end
