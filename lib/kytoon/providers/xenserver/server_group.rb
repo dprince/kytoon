@@ -264,7 +264,18 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
     file_data = Base64.encode64("/root/.ssh/authorized_keys,#{ssh_public_key}")
 
     Kytoon::Util.remote_exec(%{
-      UUID=$(xe vm-import filename=#{image_path})
+      BASE_VM_NAME=$(basename #{image_path})
+      BASE_VM_UUID=$(xe vm-list name-label=$BASE_VM_NAME | grep uuid | sed -e 's|.*: ||')
+
+      if [ -z "$BASE_VM_UUID" ]; then
+        # create base vm for future use
+        BASE_UUID=$(xe vm-import filename=#{image_path})
+        xe vm-param-set name-label=$BASE_VM_NAME uuid=$BASE_UUID
+        xe vm-param-set other-config:kytoon_base_vm=true uuid=$BASE_UUID
+      fi
+
+      UUID=$(xe vm-clone vm=$BASE_VM_NAME new-name-label=${BASE_VM_NAME}_new)
+      xe vm-param-remove param-name=other-config param-key=kytoon_base_vm uuid=$UUID
       xe vm-param-set name-label=#{hostname} uuid=$UUID
       NETWORK_UUID=$(xe network-list bridge=#{xen_bridge} | grep -P "^uuid" | cut -f2 -d: | cut -f2 -d" ")
       xe vif-destroy uuid=$VIF_UUID &> /dev/null
@@ -294,23 +305,13 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
 
   def self.cleanup_instances(gw_ip)
     Kytoon::Util.remote_exec(%{
-      rpm -ev openstack-xen-plugins &> /dev/null
-      yum clean all &> /dev/null
-
       for UUID in $(xe vm-list is-control-domain=false | grep uuid | sed -e 's|.*: ||'); do
-      echo "Destroying Xen instance uuid: $UUID"
-      xe vm-shutdown force=true uuid=$UUID
-      xe vm-destroy uuid=$UUID
-      done
-
-      for UUID in $(xe vdi-list read-only=false | grep "^uuid" | sed -e 's|.*: ||'); do
-      echo "Destroying VDI uuid: $UUID"
-      xe vdi-destroy uuid=$UUID
-      done
-
-      for UUID in $(xe vif-list | grep uuid | sed -e 's|.*: ||'); do
-        echo "Destroying Xen VIF uuid: $UUID"
-        xe vif-destroy uuid=$UUID
+        # destroy all instances except the basevm's
+        if ! xe vm-param-get param-name=other-config uuid=$UUID | grep -c kytoon_base_vm; then
+          echo "Destroying Xen instance uuid: $UUID"
+          xe vm-shutdown force=true uuid=$UUID
+          xe vm-uninstall uuid=$UUID force=true
+        fi
       done
 
     }, gw_ip) do |ok, out|
