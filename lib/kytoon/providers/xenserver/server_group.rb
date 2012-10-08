@@ -313,7 +313,14 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
           xe vm-uninstall uuid=$UUID force=true
         fi
       done
-
+      for VDI_UUID in $(xe vdi-list read-only=false | grep -v sr-uuid | grep uuid | sed -e 's|.*: ||'); do
+        # destroy all vdi's which aren't in use
+        IN_USE=$(xe vbd-list vdi-uuid=$VDI_UUID | grep vdi-uuid | grep -c $VDI_UUID)
+        if [[ "$IN_USE" -eq "0" ]]; then
+          echo "removing VDI: $VDI_UUID"
+          xe vdi-destroy uuid=$VDI_UUID
+        fi
+      done
     }, gw_ip) do |ok, out|
       if not ok
         puts out
