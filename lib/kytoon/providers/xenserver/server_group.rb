@@ -50,7 +50,7 @@ class ServerGroup
   attr_accessor :dns_nameserver
 
   def initialize(options={})
-    @id = options[:id] || Time.now.to_i
+    @id = options[:id] || Time.now.to_f
     @name = options[:name]
     @netmask = options[:netmask]
     @gateway = options[:gateway]

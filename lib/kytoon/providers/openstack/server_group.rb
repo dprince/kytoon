@@ -28,7 +28,7 @@ class ServerGroup
   attr_accessor :name
 
   def initialize(options={})
-    @id = options[:id] || Time.now.to_i
+    @id = options[:id] || Time.now.to_f
     @name = options[:name]
     @servers=[]
     end

@@ -37,7 +37,7 @@ class ServerGroup
   attr_accessor :use_sudo
 
   def initialize(options={})
-    @id = options[:id] || Time.now.to_i
+    @id = options[:id] || Time.now.to_f
     @name = options[:name]
     @use_sudo = options[:use_sudo]
     @servers=[]
