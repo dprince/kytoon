@@ -1,3 +1,7 @@
+* Mon Nov 26 2012 Dan Prince <dprince@redhat.com> - 1.2.5
+  - Libvirt: ping test instances to ensure they have IPs before
+    trying to configure hosts, etc.
+
 * Thu Oct 8 2012 Dan Prince <dprince@redhat.com> - 1.2.4
   - XenServer: Delete VDI's that aren't in use during cleanup.
 

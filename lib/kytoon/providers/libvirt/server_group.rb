@@ -2,6 +2,7 @@ require 'json'
 require 'kytoon/util'
 require 'rexml/document'
 require 'rexml/xpath'
+require 'timeout'
 
 module Kytoon
 
@@ -159,6 +160,7 @@ class ServerGroup
     puts "Copying hosts files..."
     #now that we have IP info copy hosts files into the servers
     sg.servers.each do |server|
+      ping_test(server['ip_address'])
       Kytoon::Util.remote_exec(%{
 cat > /etc/hosts <<-EOF_CAT
 #{hosts_file_data}
@@ -176,6 +178,31 @@ fi
     end
 
     sg
+  end
+
+  def self.default_ip_type()
+    ip_type = Util.load_configs['libvirt_ip_type'] || 4
+    ip_type.to_i
+  end
+
+  def self.ping_test(ip_addr)
+
+    ping_timeout = (Util.load_configs['libvirt_ping_timeout'] || 60).to_i
+
+    begin
+      ping = self.default_ip_type == 6 ? 'ping6' : 'ping'
+      ping_command = "#{ping} -c 1 #{ip_addr} > /dev/null 2>&1"
+      Timeout::timeout(ping_timeout) do
+        while(1) do
+          return true if system(ping_command)
+        end
+      end
+    rescue Timeout::Error => te
+      raise KytoonException, "Timeout pinging server: #{ping_command}"
+    end
+
+    return false
+
   end
 
   def self.get(options={})
