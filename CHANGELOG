@@ -5,6 +5,8 @@
     which gives us millisecond accuracy. This should avoid ID
     collisions which could occur if two groups were spun up
     in the same second (thus causing image name collisions, etc)
+  - XenServer: Add 'cleanup_before_create' option to run instance
+    cleanup before creating a new group.
 
 * Thu Oct 8 2012 Dan Prince <dprince@redhat.com> - 1.2.4
   - XenServer: Delete VDI's that aren't in use during cleanup.

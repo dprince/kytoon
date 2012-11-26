@@ -48,6 +48,7 @@ class ServerGroup
   attr_accessor :bridge
   attr_accessor :public_ip_bridge
   attr_accessor :dns_nameserver
+  attr_accessor :cleanup_before_create
 
   def initialize(options={})
     @id = options[:id] || Time.now.to_f
@@ -59,6 +60,7 @@ class ServerGroup
     @bridge = options[:bridge]
     @public_ip_bridge = options[:public_ip_bridge]
     @dns_nameserver = options[:dns_nameserver]
+    @cleanup_before_create = options[:cleanup_before_create]
     @gateway_ip = options[:gateway_ip]
     @gateway_ip = ENV['GATEWAY_IP'] if @gateway_ip.nil?
     raise ConfigException, "Please specify a GATEWAY_IP" if @gateway_ip.nil?
@@ -93,6 +95,7 @@ class ServerGroup
       :dns_nameserver => json_hash['dns_nameserver'],
       :network_type => json_hash['network_type'],
       :public_ip_bridge => json_hash['public_ip_bridge'],
+      :cleanup_before_create => json_hash['cleanup_before_create'],
       :bridge => json_hash['bridge']
     )
     json_hash["servers"].each do |server_hash|
@@ -145,6 +148,7 @@ class ServerGroup
         'gateway_ip' => @gateway_ip,
         'broadcast' => @broadcast,
         'dns_nameserver' => @dns_nameserver,
+        'cleanup_before_create' => @cleanup_before_create,
         'network_type' => @network_type,
         'public_ip_bridge' => @public_ip_bridge,
         'bridge' => @bridge,
@@ -168,6 +172,7 @@ class ServerGroup
   end
 
   def self.create(sg)
+    ServerGroup.cleanup_instances(sg.gateway_ip) if sg.cleanup_before_create
     sg.cache_to_disk
     init_host(sg)
     status, host_ssh_public_key = Kytoon::Util.remote_exec(%{
