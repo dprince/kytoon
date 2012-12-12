@@ -320,17 +320,22 @@ fi
 
     # lookup server IP here... 
     mac_addr = nil
+    network_name = nil
     dom_xml = %x{#{sudo} virsh --connect=qemu:///system dumpxml #{domain_name}}
     dom = REXML::Document.new(dom_xml)
     REXML::XPath.each(dom, "//interface/mac") do |interface_xml|
       mac_addr = interface_xml.attributes['address']
     end
     raise KytoonException, "Failed to lookup mac address for #{inst_name}" if mac_addr.nil?
+    REXML::XPath.each(dom, "//interface/source") do |interface_xml|
+      network_name = interface_xml.attributes['network']
+    end
+    raise KytoonException, "Failed to lookup network name for #{inst_name}" if network_name.nil?
 
-    instance_ip = %x{grep -i #{mac_addr} /var/lib/libvirt/dnsmasq/default.leases | cut -d " " -f 3}.chomp
+    instance_ip = %x{grep -i #{mac_addr} /var/lib/libvirt/dnsmasq/#{network_name}.leases | cut -d " " -f 3}.chomp
     count = 0
     until not instance_ip.empty? do
-      instance_ip = %x{grep -i #{mac_addr} /var/lib/libvirt/dnsmasq/default.leases | cut -d " " -f 3}.chomp
+      instance_ip = %x{grep -i #{mac_addr} /var/lib/libvirt/dnsmasq/#{network_name}.leases | cut -d " " -f 3}.chomp
       sleep 1
       count += 1
       if count >= 60 then
