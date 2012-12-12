@@ -116,6 +116,12 @@ REMOTE_EXEC_EOF
 
   end
 
+  # Generate an ssh keypair using the specified base path
+  def self.generate_ssh_keypair(ssh_key_basepath)
+    FileUtils.mkdir_p(File.dirname(ssh_key_basepath))
+    %x{ssh-keygen -N '' -f #{ssh_key_basepath} -t rsa -q}
+  end
+
 end
 
 end

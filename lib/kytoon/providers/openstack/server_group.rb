@@ -1,6 +1,6 @@
 require 'json'
 require 'kytoon/util'
-require 'openstack/compute'
+require 'fog'
 
 module Kytoon
 
@@ -26,10 +26,12 @@ class ServerGroup
 
   attr_accessor :id
   attr_accessor :name
+  attr_accessor :use_security_groups
 
   def initialize(options={})
     @id = options[:id] || Time.now.to_f
     @name = options[:name]
+    @use_security_groups = options[:use_security_groups]
     @servers=[]
     end
 
@@ -52,7 +54,8 @@ class ServerGroup
 
     sg=ServerGroup.new(
       :id => json_hash["id"],
-      :name => json_hash["name"]
+      :name => json_hash["name"],
+      :use_security_groups => json_hash["use_security_groups"]
     )
     json_hash["servers"].each do |server_hash|
 
@@ -62,7 +65,11 @@ class ServerGroup
         'image_ref' => server_hash['image_ref'],
         'flavor_ref' => server_hash['flavor_ref'],
         'keypair_name' => server_hash['keypair_name'],
+        'floating_ip' => server_hash['floating_ip'],
         'gateway' => server_hash['gateway'] || "false",
+        'assign_floating_ip' => server_hash['assign_floating_ip'] || "false",
+        'floating_ip' => server_hash['floating_ip'] || nil,
+        'floating_ip_id' => server_hash['floating_ip_id'] || nil,
         'ip_address' => server_hash['ip_address']
       }
     end
@@ -84,7 +91,7 @@ class ServerGroup
 
   def server_names
 
-    names=[]  
+    names=[]
 
     servers.each do |server|
       if block_given? then
@@ -103,10 +110,11 @@ class ServerGroup
     sg_hash = {
         'id' => @id,
         'name' => @name,
+        'use_security_groups' => @use_security_groups,
         'servers' => []
     }
     @servers.each do |server|
-        sg_hash['servers'] << {'id' => server['id'], 'hostname' => server['hostname'], 'image_ref' => server['image_ref'], 'gateway' => server['gateway'], 'flavor_ref' => server['flavor_ref'], 'ip_address' => server['ip_address']}
+        sg_hash['servers'] << {'id' => server['id'], 'hostname' => server['hostname'], 'image_ref' => server['image_ref'], 'gateway' => server['gateway'], 'flavor_ref' => server['flavor_ref'], 'ip_address' => server['ip_address'], 'floating_ip' => server['floating_ip'], 'floating_ip_id' => server['floating_ip_id'], 'assign_floating_ip' => server['assign_floating_ip']}
     end
 
     FileUtils.mkdir_p(@@data_dir)
@@ -118,12 +126,22 @@ class ServerGroup
 
   def delete
     servers.each do |server|
+      if server['assign_floating_ip'] == 'true' then
+        ServerGroup.release_floating_ip(server)
+      end
       ServerGroup.destroy_instance(server['id'])
     end
+
+    #cleanup ssh keys
+    private_ssh_key = File.join(@@data_dir, "#{@id}_id_rsa")
+    public_ssh_key = File.join(@@data_dir, "#{@id}_id_rsa.pub")
+    [private_ssh_key, public_ssh_key].each do |file|
+      File.delete(file) if File.exists?(file)
+    end
+
     out_file=File.join(@@data_dir, "#{@id}.json")
     File.delete(out_file) if File.exists?(out_file)
   end
-
 
   def self.create(sg)
 
@@ -131,10 +149,21 @@ class ServerGroup
 
     build_timeout = (Util.load_configs['openstack_build_timeout'] || 60).to_i
 
+    base_key_name=File.join(@@data_dir, "#{sg.id}_id_rsa")
+    Kytoon::Util.generate_ssh_keypair(base_key_name)
+    private_ssh_key=IO.read(base_key_name)
+    public_ssh_key=IO.read(base_key_name + ".pub")
+
     sg.servers.each do |server|
       server_id = create_instance(sg.id, server['hostname'], server['image_ref'], server['flavor_ref'], server['keypair_name']).id
-
       server['id'] = server_id
+
+      if server['assign_floating_ip'] == 'true' then
+        floating_data = assign_floating_ip(server_id)
+        server['floating_ip_id'] = floating_data[0]
+        server['floating_ip'] = floating_data[1]
+      end
+
       sg.cache_to_disk
     end
 
@@ -143,7 +172,11 @@ class ServerGroup
         ips = get_server_ips
         sg.servers.each do |server|
           server_ip = ips[server['id']]
-          server['ip_address'] = server_ip
+          if server['assign_floating_ip'] == 'true' then
+            server['ip_address'] = server['floating_ip']
+          else
+            server['ip_address'] = server_ip
+          end
           sg.cache_to_disk
           hosts_file_data += "#{server_ip}\t#{server['hostname']}\n"
         end
@@ -152,9 +185,33 @@ class ServerGroup
       raise KytoonException, "Timeout building server group."
     end
 
-
     puts "Copying hosts files..."
-    #now that we have IP info copy hosts files into the servers
+
+gateway_ssh_config = %{
+[ -d .ssh ] || mkdir .ssh
+cat > .ssh/id_rsa <<-EOF_CAT
+#{private_ssh_key}
+EOF_CAT
+chmod 600 .ssh/id_rsa
+cat > .ssh/id_rsa.pub <<-EOF_CAT
+#{public_ssh_key}
+EOF_CAT
+chmod 600 .ssh/id_rsa.pub
+cat > .ssh/config <<-EOF_CAT
+StrictHostKeyChecking no
+EOF_CAT
+chmod 600 .ssh/config
+}
+
+node_ssh_config= %{
+[ -d .ssh ] || mkdir .ssh
+cat > .ssh/authorized_keys <<-EOF_CAT
+#{public_ssh_key}
+EOF_CAT
+chmod 600 .ssh/authorized_keys
+}
+
+    # now that we have IP info copy hosts files into the servers
     sg.servers.each do |server|
       ping_test(server['ip_address'])
       Kytoon::Util.remote_exec(%{
@@ -165,6 +222,7 @@ hostname "#{server['hostname']}"
 if [ -f /etc/sysconfig/network ]; then
   sed -e "s|^HOSTNAME.*|HOSTNAME=#{server['hostname']}|" -i /etc/sysconfig/network
 fi
+#{server['gateway'] == 'true' ? gateway_ssh_config : node_ssh_config}
       }, server['ip_address']) do |ok, out|
         if not ok
           puts out
@@ -215,11 +273,15 @@ fi
   def self.init_connection
     configs = Util.load_configs
     if @@connection.nil? then
-      @@connection = OpenStack::Compute::Connection.new(
-        :username => configs['openstack_username'].to_s,
-        :api_key => configs['openstack_password'].to_s,
-        :auth_url => configs['openstack_url'],
-        :retry_auth => false)
+      @connection = Fog::Compute.new(
+        :provider           => :openstack,
+        :openstack_auth_url  => configs['openstack_url'],
+        :openstack_username => configs['openstack_username'],
+        :openstack_api_key => configs['openstack_password'],
+        :openstack_service_name => configs['openstack_service_name'],
+        :openstack_service_type => configs['openstack_service_type'],
+        :openstack_region => configs['openstack_region']
+      )
     else
       @@connection
     end
@@ -227,24 +289,74 @@ fi
 
   def self.create_instance(group_id, hostname, image_ref, flavor_ref, keypair_name)
 
-    ssh_public_key = Util.public_key_path
     configs = Util.load_configs
-
     conn = self.init_connection
 
     options = {
       :name => "#{group_id}_#{hostname}",
-      :imageRef => image_ref,
-      :flavorRef => flavor_ref,
-      :personality => {ssh_public_key => "/root/.ssh/authorized_keys"},
-      :is_debug => true}
+      :image_ref => image_ref,
+      :flavor_ref => flavor_ref}
 
     keypair_name = configs['openstack_keypair_name'] if keypair_name.nil?
     if not keypair_name.nil? and not keypair_name.empty? then
       options.store(:key_name, keypair_name)
+    else
+      options.store(:personality,
+      :personality => [
+        {'path' => "/root/.ssh/authorized_keys",
+         'contents' => IO.load(Util.public_key_path)}
+      ])
     end
 
-    conn.create_server(options)
+    server = conn.servers.create(options)
+    server
+
+  end
+
+  def self.assign_floating_ip(server_id)
+
+    conn = self.init_connection
+
+    data = conn.allocate_address.body
+    address_id = data['floating_ip']['id']
+    address_ip = data['floating_ip']['ip']
+
+    configs = Util.load_configs
+    network_name = configs['openstack_network_name'] || 'public'
+
+    # wait for instance to obtain fixed ip
+    1.upto(60) do
+      server = conn.servers.get(server_id)
+      if server.addresses and server.addresses[network_name] and server.addresses[network_name].detect {|a| a['version'] == self.default_ip_type} then
+        break
+      end
+    end
+
+    conn.associate_address(server_id, address_ip).body
+    [address_id, address_ip]
+
+  end
+
+  def self.release_floating_ip(server)
+
+    conn = self.init_connection
+
+    address_ip = server['floating_ip']
+    address_id = server['floating_ip_id']
+
+    conn.disassociate_address(server['id'], address_ip)
+
+    # wait for address to disassociate (instance_id should be nil)
+    1.upto(30) do
+      floating_ips = conn.list_all_addresses.body['floating_ips']
+      break if floating_ips.detect {|f| f['id'] == address_id and f['instance_id' == nil]}
+    end
+
+    begin
+      conn.release_address(address_id)
+    rescue Fog::Compute::OpenStack::NotFound
+      puts "Unable to release IP address #{address_ip}: Not Found."
+    end
 
   end
 
@@ -265,12 +377,14 @@ fi
     until all_active do
       all_active = true
       conn.servers.each do |server|
-        server = conn.server(server[:id])
-        if server.status == 'ACTIVE' and ips[server.id].nil? then
-          addresses = server.addresses[network_name.to_sym].select {|a| a.version == self.default_ip_type}
-          ips[server.id] = addresses[0].address
-        else
-          all_active = false
+        if ips[server.id].nil? then
+          server = conn.servers.get(server.id)
+          if server.state == 'ACTIVE' then
+            addresses = server.addresses[network_name].select {|a| a['version'] == self.default_ip_type}
+            ips[server.id] = addresses[0]['addr']
+          else
+            all_active = false
+          end
         end
       end
     end
@@ -302,7 +416,12 @@ fi
   def self.destroy_instance(uuid)
     begin
       conn = self.init_connection
-      conn.server(uuid).delete!
+      server = conn.servers.get(uuid)
+      if server then
+        server.destroy
+      else
+        puts "Server #{uuid} no longer exists."
+      end
     rescue Exception => e
       puts "Error deleting server: #{e.message}"
     end
