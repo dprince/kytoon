@@ -61,7 +61,7 @@ class ServerGroup
     json_hash=JSON.parse(json)
 
     configs = Util.load_configs
-    use_sudo = ENV['LIBVIRT_USE_SUDO'] || configs['libvirt_use_sudo']
+    use_sudo = ENV['LIBVIRT_USE_SUDO'] || configs['libvirt_use_sudo'].to_s
 
     sg=ServerGroup.new(
       :id => json_hash["id"],
