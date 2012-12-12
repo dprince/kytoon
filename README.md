@@ -41,9 +41,13 @@ Create a .kytoon.conf file in your $HOME directory.
         openstack_password: <password>
         openstack_network_name: public # Optional: defaults to public
         openstack_keypair_name: < keyname > # Optional: file injection via personalities is the default
+        openstack_security_groups: ['', ''] # Optional: Array of security group names
         openstack_ip_type: 4 # IP type (4 or 6): defaults to 4
         openstack_build_timeout: 480 # Server build timeout. Defaults to: 480
         openstack_ping_timeout: 60 # Server build timeout. Defaults to: 60
+        openstack_service_name: < name > # Optional: default is None... some clouds have multiple 'compute' services so this may be required
+        openstack_service_type: compute # Optional: default is 'compute'
+        openstack_region: < region name > # Optional
 
         # Libvirt settings
         # Whether commands to create local group should use sudo
