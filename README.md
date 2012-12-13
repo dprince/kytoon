@@ -25,9 +25,12 @@ Inspired by and based on the Chef VPC Toolkit.
 
 ## Installation
 
-Gem install kytoon.
+Quick install on Fedora:
 
+    yum install -y rubygems ruby-devel gcc gcc-c++ libxslt-devel
     gem install kytoon
+
+    *NOTE: Kytoon has been tested with Fog 1.8.0+ only (1.9.0 will be required to work with Rackspace's OpenStack Cloud)
 
 Create a .kytoon.conf file in your $HOME directory.
 

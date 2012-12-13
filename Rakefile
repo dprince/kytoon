@@ -28,7 +28,7 @@ begin
     gem.add_dependency 'rake'
     gem.add_dependency 'builder'
     gem.add_dependency 'json'
-    gem.add_dependency 'openstack-compute'
+    gem.add_dependency 'fog'
     gem.add_dependency 'thor'
     gem.add_dependency 'uuidtools'
   end
