@@ -138,11 +138,25 @@ class ServerGroup
     end
     out_file=File.join(@@data_dir, "#{@id}.json")
     File.delete(out_file) if File.exists?(out_file)
+
+    #cleanup ssh keys
+    private_ssh_key = File.join(@@data_dir, "#{@id}_id_rsa")
+    public_ssh_key = File.join(@@data_dir, "#{@id}_id_rsa.pub")
+    [private_ssh_key, public_ssh_key].each do |file|
+      File.delete(file) if File.exists?(file)
+    end
+
   end
 
   def self.create(sg)
 
     ssh_public_key = Kytoon::Util.load_public_key
+
+    base_key_name=File.join(@@data_dir, "#{sg.id}_id_rsa")
+    Kytoon::Util.generate_ssh_keypair(base_key_name)
+    private_ssh_key=IO.read(base_key_name)
+    public_ssh_key=IO.read(base_key_name + ".pub")
+
     sudo = sg.use_sudo =~ /(true|t|yes|y|1)$/i ? "sudo" : ""
     hosts_file_data = "127.0.0.1\tlocalhost localhost.localdomain\n"
     sg.servers.each do |server|
@@ -158,6 +172,31 @@ class ServerGroup
     end
 
     puts "Copying hosts files..."
+
+gateway_ssh_config = %{
+[ -d .ssh ] || mkdir .ssh
+cat > .ssh/id_rsa <<-EOF_CAT
+#{private_ssh_key}
+EOF_CAT
+chmod 600 .ssh/id_rsa
+cat > .ssh/id_rsa.pub <<-EOF_CAT
+#{public_ssh_key}
+EOF_CAT
+chmod 600 .ssh/id_rsa.pub
+cat > .ssh/config <<-EOF_CAT
+StrictHostKeyChecking no
+EOF_CAT
+chmod 600 .ssh/config
+}
+
+node_ssh_config= %{
+[ -d .ssh ] || mkdir .ssh
+cat > .ssh/authorized_keys <<-EOF_CAT
+#{public_ssh_key}
+EOF_CAT
+chmod 600 .ssh/authorized_keys
+}
+
     #now that we have IP info copy hosts files into the servers
     sg.servers.each do |server|
       ping_test(server['ip_address'])
@@ -169,6 +208,7 @@ hostname "#{server['hostname']}"
 if [ -f /etc/sysconfig/network ]; then
   sed -e "s|^HOSTNAME.*|HOSTNAME=#{server['hostname']}|" -i /etc/sysconfig/network
 fi
+#{server['gateway'] == 'true' ? gateway_ssh_config : node_ssh_config}
       }, server['ip_address']) do |ok, out|
         if not ok
           puts out
@@ -304,7 +344,8 @@ if [ -n "$LV_ROOT" ]; then
     mount $LV_ROOT / : \
     sh "/bin/mkdir -p /root/.ssh" : \
     write-append /root/.ssh/authorized_keys "#{ssh_public_key}" : \
-    sh "/bin/chmod -R 700 /root/.ssh"
+    sh "/bin/chmod 700 /root/.ssh" : \
+    sh "/bin/chmod 600 /root/.ssh/authorized_keys"
 fi
 
 #{sudo} virsh setmaxmem #{domain_name} #{instance_memory}
