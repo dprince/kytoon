@@ -174,7 +174,7 @@ class ServerGroup
     puts "Copying hosts files..."
 
 gateway_ssh_config = %{
-[ -d .ssh ] || mkdir .ssh
+mkdir -p .ssh
 cat > .ssh/id_rsa <<-EOF_CAT
 #{private_ssh_key}
 EOF_CAT
@@ -182,7 +182,7 @@ chmod 600 .ssh/id_rsa
 cat > .ssh/id_rsa.pub <<-EOF_CAT
 #{public_ssh_key}
 EOF_CAT
-chmod 600 .ssh/id_rsa.pub
+chmod 644 .ssh/id_rsa.pub
 cat > .ssh/config <<-EOF_CAT
 StrictHostKeyChecking no
 EOF_CAT
@@ -190,9 +190,9 @@ chmod 600 .ssh/config
 }
 
 node_ssh_config= %{
-[ -d .ssh ] || mkdir .ssh
-cat > .ssh/authorized_keys <<-EOF_CAT
-#{public_ssh_key}
+mkdir -p .ssh
+cat >> .ssh/authorized_keys <<-EOF_CAT
+#{public_ssh_key}\n
 EOF_CAT
 chmod 600 .ssh/authorized_keys
 }
@@ -208,7 +208,8 @@ hostname "#{server['hostname']}"
 if [ -f /etc/sysconfig/network ]; then
   sed -e "s|^HOSTNAME.*|HOSTNAME=#{server['hostname']}|" -i /etc/sysconfig/network
 fi
-#{server['gateway'] == 'true' ? gateway_ssh_config : node_ssh_config}
+#{server['gateway'] == 'true' ? gateway_ssh_config : ""}
+#{node_ssh_config}
       }, server['ip_address']) do |ok, out|
         if not ok
           puts out
@@ -343,9 +344,8 @@ if [ -n "$LV_ROOT" ]; then
     run : \
     mount $LV_ROOT / : \
     sh "/bin/mkdir -p /root/.ssh" : \
-    write-append /root/.ssh/authorized_keys "#{ssh_public_key}" : \
-    sh "/bin/chmod 700 /root/.ssh" : \
-    sh "/bin/chmod 600 /root/.ssh/authorized_keys"
+    write-append /root/.ssh/authorized_keys "#{ssh_public_key}\n" : \
+    sh "/bin/chmod -R 700 /root/.ssh"
 fi
 
 #{sudo} virsh setmaxmem #{domain_name} #{instance_memory}

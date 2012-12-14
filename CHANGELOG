@@ -1,4 +1,10 @@
-* Mon Dec 13 2012 Dan Prince <dprince@redhat.com> - 1.3.0
+* Thu Dec 13 2012 Dan Prince <dprince@redhat.com> - 1.3.1
+  -SSH config fixes for libvirt and openstack providers. You can now
+   ssh to localhost from the gateway node. (weird but constistent)
+  -Add retry_attempts to remote_exec method
+  -Update OpenStack provider to retry initial ssh config up to 3 times.
+
+* Thu Dec 13 2012 Dan Prince <dprince@redhat.com> - 1.3.0
   -OpenStack: Switch to Fog.
   -OpenStack: Add support for automatic floating IP configuration via
    'assign_floating_ip' in server group json files.

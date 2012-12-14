@@ -66,23 +66,30 @@ module Util
     end
   end
 
-  def self.remote_exec(script_text, gateway_ip)
+  def self.remote_exec(script_text, gateway_ip, retry_attempts=0, retry_sleep=5)
     if gateway_ip.nil?
       sg=ServerGroup.get
       gateway_ip=sg.gateway_ip
     end
 
-    out=%x{
+    retval=nil
+    out=nil
+    (retry_attempts+1).times do |count|
+      sleep retry_sleep if count > 1
+      out=%x{
 ssh #{SSH_OPTS} root@#{gateway_ip} bash <<-"REMOTE_EXEC_EOF"
 #{script_text}
 REMOTE_EXEC_EOF
-    }
-    retval=$?
+      }
+      retval=$?
+      break if retval.success?
+    end
     if block_given? then
       yield retval.success?, out
     else
       return [retval.success?, out]
     end
+
   end
 
   def self.remote_multi_exec(hosts, script_text, gateway_ip)
