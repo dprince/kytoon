@@ -94,6 +94,8 @@ For Openstack:
 
 For Libvirt (uses libvirt DHCP server for instance IP configuration):
 
+NOTE: Kytoon assumes you are using NAT networking for your libvirt instances. If you use bridged networking the IP discovery mechanism will fail.
+
 ```bash
 
 	cat > config/server_group.json <<-"EOF_CAT"
