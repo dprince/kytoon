@@ -63,6 +63,8 @@ each server group.  These files typically live inside of project are
 provider specific. The config files control things like memory, hostname,
 flavor, etc. Each group should define identify one instance as the 'gateway' host which marks it as the primary access point for SSH access into the group.
 
+NOTE: As Kytoon relies on SSH access, the base images being used for server groups must have the SSH daemon installed and enabled, as well as reachable. If there is a firewall on the guest images, it must be configured accordingly.
+
 By default Kytoon looks for config/server_group.json in the current directory.
 You can override this with Rake using GROUP_CONFIG or bin/kytoon using --group-config.
 
@@ -94,7 +96,10 @@ For Openstack:
 
 For Libvirt (uses libvirt DHCP server for instance IP configuration):
 
+NOTE: Kytoon is always using the qemu:///system Libvirt connection.
 NOTE: Kytoon assumes you are using NAT networking for your libvirt instances. If you use bridged networking the IP discovery mechanism will fail.
+NOTE: If the 'create_cow' option is set to 'true', the format for the disk driver must be 'qcow2' in the original guest image, or guest xml (and not 'raw', for instance). The original guest xml might need to be adjusted for this.
+NOTE: You can dump the xml for the original guest image with the 'virsh --connect=qemu:///system dumpxml $DOMAIN' command.
 
 ```bash
 
