@@ -305,7 +305,6 @@ fi
 if [ -n "$DEBUG" ]; then
 set -x
 fi
-export VIRSH_DEFAULT_CONNECT_URI="qemu:///system"
 if [ -n "#{original_xml}" ]; then
   ORIGIN="--original-xml #{original_xml}"
 elif [ -n "#{original}" ]; then
@@ -316,7 +315,7 @@ fi
 
 if [ -n "#{create_cow}" ]; then
 
-  #{sudo} virt-clone --connect="$VIRSH_DEFAULT_CONNECT_URI" \
+  #{sudo} virt-clone --connect=qemu:///system \
     --name '#{domain_name}' \
     --file '#{disk_path}' \
     --force \
@@ -328,7 +327,7 @@ if [ -n "#{create_cow}" ]; then
 
 else
 
-  #{sudo} virt-clone --connect="$VIRSH_DEFAULT_CONNECT_URI" \
+  #{sudo} virt-clone --connect=qemu:///system \
     --name '#{domain_name}' \
     --file '#{disk_path}' \
     --force \
@@ -348,9 +347,9 @@ if [ -n "$LV_ROOT" ]; then
     sh "/bin/chmod -R 700 /root/.ssh"
 fi
 
-#{sudo} virsh setmaxmem #{domain_name} #{instance_memory}
-#{sudo} virsh start #{domain_name}
-#{sudo} virsh setmem #{domain_name} #{instance_memory}
+#{sudo} virsh --connect=qemu:///system setmaxmem #{domain_name} #{instance_memory}
+#{sudo} virsh --connect=qemu:///system start #{domain_name}
+#{sudo} virsh --connect=qemu:///system setmem #{domain_name} #{instance_memory}
 
     }
     retval=$?
@@ -393,13 +392,12 @@ fi
 if [ -n "$DEBUG" ]; then
 set -x
 fi
-export VIRSH_DEFAULT_CONNECT_URI="qemu:///system"
-if #{sudo} virsh dumpxml #{domain_name} &> /dev/null; then
-  #{sudo} virsh destroy "#{domain_name}" &> /dev/null
-  #{sudo} virsh undefine "#{domain_name}"
+if #{sudo} virsh --connect=qemu:///system dumpxml #{domain_name} &> /dev/null; then
+  #{sudo} virsh --connect=qemu:///system destroy "#{domain_name}" &> /dev/null
+  #{sudo} virsh --connect=qemu:///system undefine "#{domain_name}"
 fi
 # If we used --preserve-data there will be no volume... ignore it
-#{sudo} virsh vol-delete --pool default "#{group_id}_#{inst_name}.img" &> /dev/null
+#{sudo} virsh --connect=qemu:///system vol-delete --pool default "#{group_id}_#{inst_name}.img" &> /dev/null
 if [ -f "#{disk_path}" ]; then
   #{sudo} rm -f "#{disk_path}"
 fi
