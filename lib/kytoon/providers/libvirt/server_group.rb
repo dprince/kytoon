@@ -76,6 +76,7 @@ class ServerGroup
         'original' => server_hash['original'],
         'original_xml' => server_hash['original_xml'],
         'create_cow' => server_hash['create_cow'],
+        'selinux_enabled' => server_hash['selinux_enabled'],
         'disk_path' => server_hash['disk_path'],
         'ip_address' => server_hash['ip_address'],
         'gateway' => server_hash['gateway'] || "false"
@@ -121,7 +122,7 @@ class ServerGroup
         'servers' => []
     }
     @servers.each do |server|
-        sg_hash['servers'] << {'hostname' => server['hostname'], 'memory' => server['memory'], 'gateway' => server['gateway'], 'original' => server['original'], 'original_xml' => server['original_xml'], 'create_cow' => server['create_cow'], 'disk_path' => server['disk_path'], 'ip_address' => server['ip_address']}
+        sg_hash['servers'] << {'hostname' => server['hostname'], 'memory' => server['memory'], 'gateway' => server['gateway'], 'original' => server['original'], 'original_xml' => server['original_xml'], 'create_cow' => server['create_cow'], 'disk_path' => server['disk_path'], 'selinux_enabled' => server['selinux_enabled'], 'ip_address' => server['ip_address']}
     end
 
     FileUtils.mkdir_p(@@data_dir)
@@ -165,7 +166,7 @@ class ServerGroup
       disk_path=File.join(image_dir, "#{sg.id}_#{server['hostname']}.img")
       server['disk_path'] = disk_path
 
-      instance_ip = create_instance(sg.id, server['hostname'], server['memory'], server['original'], server['original_xml'], disk_path, server['create_cow'], ssh_public_key, sudo)
+      instance_ip = create_instance(sg.id, server['hostname'], server['memory'], server['original'], server['original_xml'], disk_path, server['create_cow'], server['selinux_enabled'], ssh_public_key, sudo)
       server['ip_address'] = instance_ip
       hosts_file_data += "#{instance_ip}\t#{server['hostname']}\n"
       sg.cache_to_disk
@@ -294,7 +295,9 @@ fi
     raise KytoonException, "Unable to find disk path for instance."
   end
 
-  def self.create_instance(group_id, inst_name, memory_gigs, original, original_xml, disk_path, create_cow, ssh_public_key, sudo)
+  def self.create_instance(group_id, inst_name, memory_gigs, original, original_xml, disk_path, create_cow, selinux_enabled, ssh_public_key, sudo)
+
+    selinux_enabled = selinux_enabled =~ /(true|t|yes|y|1)$/i ? "true" : ""
 
     puts "Creating instance: #{inst_name}"
     instance_memory = (KIB_PER_GIG * memory_gigs.to_f).to_i
@@ -339,12 +342,23 @@ fi
 LV_ROOT=$(#{sudo} virt-filesystems -a #{disk_path} --logical-volumes | grep root)
 # If using LVM we inject the ssh key this way
 if [ -n "$LV_ROOT" ]; then
-  #{sudo} guestfish --selinux add #{disk_path} : \
-    run : \
-    mount $LV_ROOT / : \
-    sh "/bin/mkdir -p /root/.ssh" : \
-    write-append /root/.ssh/authorized_keys "#{ssh_public_key}\n" : \
-    sh "/bin/chmod -R 700 /root/.ssh"
+  if [ -n "#{selinux_enabled}" ]; then
+    #{sudo} guestfish --selinux add #{disk_path} : \
+      run : \
+      mount $LV_ROOT / : \
+      sh "/bin/mkdir -p /root/.ssh" : \
+      write-append /root/.ssh/authorized_keys "#{ssh_public_key}\n" : \
+      sh "/bin/chmod -R 700 /root/.ssh" : \
+      sh "load_policy -i" : \
+      sh "chcon system_u:object_r:ssh_home_t /root/.ssh/authorized_keys"
+  else
+    #{sudo} guestfish add #{disk_path} : \
+      run : \
+      mount $LV_ROOT / : \
+      sh "/bin/mkdir -p /root/.ssh" : \
+      write-append /root/.ssh/authorized_keys "#{ssh_public_key}\n" : \
+      sh "/bin/chmod -R 700 /root/.ssh"
+  fi
 fi
 
 #{sudo} virsh --connect=qemu:///system setmaxmem #{domain_name} #{instance_memory}
