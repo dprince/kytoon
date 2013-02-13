@@ -1,3 +1,6 @@
+* Tue Feb 12 2013 Dan Prince <dprince@redhat.com> - 1.3.3
+  -Update SELinux to set correct context on /root/.ssh as well.
+
 * Mon Feb 11 2013 Dan Prince <dprince@redhat.com> - 1.3.2
   -Add 'selinux_enabled' option for libvirt provider. If set this
    option will set the SELinux context on /root/.ssh/authorized_keys

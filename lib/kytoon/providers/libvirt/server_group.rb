@@ -350,6 +350,7 @@ if [ -n "$LV_ROOT" ]; then
       write-append /root/.ssh/authorized_keys "#{ssh_public_key}\n" : \
       sh "/bin/chmod -R 700 /root/.ssh" : \
       sh "load_policy -i" : \
+      sh "chcon unconfined_u:object_r:user_home_t:s0 /root/.ssh" : \
       sh "chcon system_u:object_r:ssh_home_t /root/.ssh/authorized_keys"
   else
     #{sudo} guestfish add #{disk_path} : \
