@@ -47,7 +47,7 @@ module Util
     elsif File.exists?(File.join(ssh_dir, "id_dsa.pub"))
       File.join(ssh_dir, "id_dsa.pub")
     else
-      raise ConfigException, "Failed to load SSH key. Please create a SSH public key pair in your HOME directory."
+      raise ConfigException, "Failed to load SSH key. Please run 'ssh-keygen'."
     end
 
   end
