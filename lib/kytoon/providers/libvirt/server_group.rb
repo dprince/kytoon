@@ -100,18 +100,18 @@ class ServerGroup
 
   def server_names
 
-    names=[]  
+    names=[]
 
     servers.each do |server|
       if block_given? then
         yield server['hostname']
       else
         names << server['hostname']
-      end  
+      end
     end
 
     names
-    
+
   end
 
   def cache_to_disk
@@ -326,7 +326,9 @@ if [ -n "#{create_cow}" ]; then
     --preserve-data \
     || { echo "failed to virt-clone"; exit 1; }
 
-  #{sudo} qemu-img create -f qcow2 -o backing_file=#{original_disk_path} "#{disk_path}"
+  #{sudo} qemu-img create -f qcow2 -o backing_file=#{original_disk_path} "#{disk_path}" ||  { \
+    echo 'Failed to create a copy-on-write image of #{original_disk_path }'; exit 1;
+  }
 
 else
 
@@ -368,12 +370,12 @@ fi
 
     }
     retval=$?
-    if not retval.success? 
+    if not retval.success?
       puts out
       raise KytoonException, "Failed to create instance #{inst_name}."
     end
 
-    # lookup server IP here... 
+    # lookup server IP here...
     mac_addr = nil
     network_name = nil
     dom_xml = %x{#{sudo} virsh --connect=qemu:///system dumpxml #{domain_name}}
@@ -419,7 +421,7 @@ fi
     }
     puts out
     retval=$?
-    if not retval.success? 
+    if not retval.success?
       puts out
       raise KytoonException, "Failed to cleanup instances."
     end
