@@ -7,6 +7,8 @@ class ThorTasks < Thor
   desc "create", "Create a new server group."
   method_options :group_type => :string
   method_options :group_config => :string
+
+
   def create(options=(options or {}))
     begin
       ServerGroup.init(options[:group_type])
@@ -14,8 +16,10 @@ class ThorTasks < Thor
       puts "Server group ID #{sg.id} created."
     rescue KytoonException => ke
       puts ke.message
+      exit 1
     end
   end
+
 
   desc "list", "List existing server groups."
   method_options :group_type => :string
@@ -25,6 +29,7 @@ class ThorTasks < Thor
       ServerGroup.index()
     rescue KytoonException => ke
       puts ke.message
+      exit 1
     end
   end
 
@@ -38,6 +43,7 @@ class ThorTasks < Thor
       sg.pretty_print
     rescue KytoonException => ke
       puts ke.message
+      exit 1
     end
   end
 
@@ -52,6 +58,7 @@ class ThorTasks < Thor
       SshUtil.remove_known_hosts_ip(sg.gateway_ip)
     rescue KytoonException => ke
       puts ke.message
+      exit 1
     end
   end
 
@@ -65,6 +72,7 @@ class ThorTasks < Thor
       puts sg.gateway_ip
     rescue KytoonException => ke
       puts ke.message
+      exit 1
     end
   end
 
@@ -84,6 +92,7 @@ class ThorTasks < Thor
       exec("ssh -o \"StrictHostKeyChecking no\" root@#{sg.gateway_ip} #{args}")
     rescue KytoonException => ke
       puts ke.message
+      exit 1
     end
   end
 
