@@ -297,8 +297,7 @@ fi
 
   def self.create_instance(group_id, inst_name, memory_gigs, original, original_xml, disk_path, create_cow, selinux_enabled, ssh_public_key, sudo)
 
-    selinux_enabled = selinux_enabled =~ /(true|t|yes|y|1)$/i ? "true" : ""
-
+    selinux_enabled, guestfs_selinux_arg = selinux_enabled =~ /(true|t|yes|y|1)$/i ? ["true", '--selinux']: ["", '']
     puts "Creating instance: #{inst_name}"
     instance_memory = (KIB_PER_GIG * memory_gigs.to_f).to_i
     original_disk_path = source_disk_filename(original, original_xml) #cow only
@@ -341,27 +340,24 @@ else
 
 fi
 
-LV_ROOT=$(#{sudo} virt-filesystems -a #{disk_path} --logical-volumes | grep root)
-# If using LVM we inject the ssh key this way
-if [ -n "$LV_ROOT" ]; then
-  if [ -n "#{selinux_enabled}" ]; then
-    #{sudo} guestfish --selinux add #{disk_path} : \
-      run : \
-      mount $LV_ROOT / : \
-      sh "/bin/mkdir -p /root/.ssh" : \
-      write-append /root/.ssh/authorized_keys "#{ssh_public_key}\n" : \
-      sh "/bin/chmod -R 700 /root/.ssh" : \
-      sh "load_policy -i" : \
-      sh "chcon unconfined_u:object_r:user_home_t:s0 /root/.ssh" : \
-      sh "chcon system_u:object_r:ssh_home_t /root/.ssh/authorized_keys"
-  else
-    #{sudo} guestfish add #{disk_path} : \
-      run : \
-      mount $LV_ROOT / : \
-      sh "/bin/mkdir -p /root/.ssh" : \
-      write-append /root/.ssh/authorized_keys "#{ssh_public_key}\n" : \
-      sh "/bin/chmod -R 700 /root/.ssh"
-  fi
+#Copy the ssh-key
+#{sudo}  guestfish  -a #{disk_path} -i  <<- __EOF__
+    mkdir-p /root/.ssh
+    write-append /root/.ssh/authorized_keys "#{ssh_public_key}"
+    write-append /root/.ssh/authorized_keys \"\\n\"
+    chmod 0700 /root/.ssh
+__EOF__
+
+[ $? -eq 0 ] || { echo 'Error: unable to inject keys into the image #{disk_path}'; exit 1; }
+
+#Extra magic if selinux is enabled
+if [ -n "#{selinux_enabled}" ]; then
+    #{sudo} guestfish #{guestfs_selinux_arg} -a #{disk_path} -i  <<- __EOF__
+        sh 'load_policy -i'
+        sh 'chcon unconfined_u:object_r:user_home_t:s0 /root/.ssh'
+        sh 'chcon system_u:object_r:ssh_home_t /root/.ssh/authorized_keys'
+__EOF__
+    [ $? -eq 0 ] || { echo 'Error: unable to perform selinux operations on #{disk_path}'; exit 1; }
 fi
 
 #{sudo} virsh --connect=qemu:///system setmaxmem #{domain_name} #{instance_memory}
