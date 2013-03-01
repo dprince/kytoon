@@ -79,7 +79,7 @@ class ThorTasks < Thor
   desc "ssh", "SSH into a group."
   method_options :group_id => :string
   method_options :group_type => :string
-  def ssh(options=(options or {}))
+  def ssh(*)
     begin
       ServerGroup.init(options[:group_type])
       args=ARGV[1, ARGV.length].join(" ")
