@@ -211,7 +211,7 @@ if [ -f /etc/sysconfig/network ]; then
 fi
 #{server['gateway'] == 'true' ? gateway_ssh_config : ""}
 #{node_ssh_config}
-      }, server['ip_address']) do |ok, out|
+      }, server['ip_address'], retry_attempts=3) do |ok, out|
         if not ok
           puts out
           raise KytoonException, "Failed to copy host file to instance #{server['hostname']}."
