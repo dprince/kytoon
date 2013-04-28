@@ -237,7 +237,7 @@ fi
 
     hosts_file_data = "127.0.0.1\tlocalhost localhost.localdomain\n"
     sg.servers.each do |server|
-      hosts_file_data += "#{server['ip_address']}\t#{server['hostname']}\n"
+      hosts_file_data += "#{server['ip_address']}\t#{server['hostname']}\t#{server['hostname']}.local\n"
     end
 
     Kytoon::Util.remote_exec(%{
@@ -373,7 +373,7 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
         sleep 1
       done
       ssh #{hostname} bash <<-EOF_SSH_BASH
-hostname #{hostname}
+hostname #{hostname}.local
       EOF_SSH_BASH
       scp /etc/hosts #{hostname}:/etc/hosts
     }, gw_ip) do |ok, out|

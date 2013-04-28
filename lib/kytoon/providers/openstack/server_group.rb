@@ -178,7 +178,7 @@ class ServerGroup
             server['ip_address'] = server_ip
           end
           sg.cache_to_disk
-          hosts_file_data += "#{server_ip}\t#{server['hostname']}\n"
+          hosts_file_data += "#{server_ip}\t#{server['hostname']}\t#{server['hostname']}.local\n"
         end
       end
     rescue Timeout::Error => te
@@ -218,7 +218,7 @@ chmod 600 .ssh/authorized_keys
 cat > /etc/hosts <<-EOF_CAT
 #{hosts_file_data}
 EOF_CAT
-hostname "#{server['hostname']}"
+hostname "#{server['hostname']}.local"
 if [ -f /etc/sysconfig/network ]; then
   sed -e "s|^HOSTNAME.*|HOSTNAME=#{server['hostname']}|" -i /etc/sysconfig/network
 fi

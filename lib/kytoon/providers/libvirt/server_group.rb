@@ -168,7 +168,7 @@ class ServerGroup
 
       instance_ip = create_instance(sg.id, server['hostname'], server['memory'], server['original'], server['original_xml'], disk_path, server['create_cow'], server['selinux_enabled'], ssh_public_key, sudo)
       server['ip_address'] = instance_ip
-      hosts_file_data += "#{instance_ip}\t#{server['hostname']}\n"
+      hosts_file_data += "#{instance_ip}\t#{server['hostname']}\t#{server['hostname']}.local\n"
       sg.cache_to_disk
     end
 
@@ -205,7 +205,7 @@ chmod 600 .ssh/authorized_keys
 cat > /etc/hosts <<-EOF_CAT
 #{hosts_file_data}
 EOF_CAT
-hostname "#{server['hostname']}"
+hostname "#{server['hostname']}.local"
 if [ -f /etc/sysconfig/network ]; then
   sed -e "s|^HOSTNAME.*|HOSTNAME=#{server['hostname']}|" -i /etc/sysconfig/network
 fi
