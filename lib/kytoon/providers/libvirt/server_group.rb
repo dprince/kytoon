@@ -325,7 +325,14 @@ if [ -n "#{create_cow}" ]; then
     --preserve-data \
     || { echo "failed to virt-clone"; exit 1; }
 
-  #{sudo} qemu-img create -f qcow2 -o backing_file=#{original_disk_path} "#{disk_path}" ||  { \
+
+    img_fmt=$(#{sudo} qemu-img info #{original_disk_path} \
+                | grep '^file format:' \
+                | cut -f2 -d : \
+                | tr -d ' ')
+
+
+  #{sudo} qemu-img create -f qcow2 -o backing_file=#{original_disk_path},backing_fmt=$img_fmt "#{disk_path}" ||  { \
     echo 'Failed to create a copy-on-write image of #{original_disk_path }'; exit 1;
   }
 
