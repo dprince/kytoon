@@ -305,7 +305,7 @@ fi
 
     out = %x{
 if [ -n "$DEBUG" ]; then
-set -x
+  set -x
 fi
 if [ -n "#{original_xml}" ]; then
   ORIGIN="--original-xml #{original_xml}"
