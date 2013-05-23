@@ -367,15 +367,15 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
         COUNT=$(( $COUNT + 1 ))
         [ $COUNT -eq 10 ] && break
       done
-      until ssh -o ConnectTimeout=1 #{hostname} &> /dev/null; do
+      until ssh #{Kytoon::Util::SSH_OPTS} -o ConnectTimeout=1 #{hostname} &> /dev/null; do
         COUNT=$(( $COUNT + 1 ))
         [ $COUNT -eq 20 ] && break
         sleep 1
       done
-      ssh #{hostname} bash <<-EOF_SSH_BASH
+      ssh #{Kytoon::Util::SSH_OPTS} #{hostname} bash <<-EOF_SSH_BASH
 hostname #{hostname}.local
       EOF_SSH_BASH
-      scp /etc/hosts #{hostname}:/etc/hosts
+      scp #{Kytoon::Util::SSH_OPTS} /etc/hosts #{hostname}:/etc/hosts
     }, gw_ip) do |ok, out|
       puts out
       if not ok
