@@ -1,3 +1,6 @@
+* Thu May 30 2013 Dan Prince <dprince@redhat.com> - 1.3.8
+  -Re-release 1.3.7 as 1.3.8 to fix bad gem.
+
 * Thu May 23 2013 Dan Prince <dprince@redhat.com> - 1.3.7
   -Fix issues when using chained qcow images. (sthaha)
   -Ssh option fixes for xenserver provider.
