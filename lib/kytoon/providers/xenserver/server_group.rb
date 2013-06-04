@@ -188,6 +188,7 @@ fi
         create_instance(sg.gateway_ip, server['image_path'], server['hostname'], server['mac'], sg.bridge, host_ssh_public_key)
         network_type = sg.network_type
         if network_type == 'static' then
+            configure_host_network(sg)
             configure_static_networking(sg.gateway_ip, server['hostname'], server['ip_address'], sg.netmask, sg.gateway, sg.broadcast, server['mac'], sg.dns_nameserver)
         else
           raise "Unsupported network type '#{sg.network_type}'"
