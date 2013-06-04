@@ -188,6 +188,7 @@ fi
         create_instance(sg.gateway_ip, server['image_path'], server['hostname'], server['mac'], sg.bridge, host_ssh_public_key)
         network_type = sg.network_type
         if network_type == 'static' then
+            configure_host_network(sg)
             configure_static_networking(sg.gateway_ip, server['hostname'], server['ip_address'], sg.netmask, sg.gateway, sg.broadcast, server['mac'], sg.dns_nameserver)
         else
           raise "Unsupported network type '#{sg.network_type}'"
@@ -231,21 +232,28 @@ fi
     end
   end
 
-  def self.init_host(sg)
+  def self.configure_host_network(sg)
 
     cidr = IPAddr.new(sg.netmask).to_i.to_s(2).count("1")
-
-    hosts_file_data = "127.0.0.1\tlocalhost localhost.localdomain\n"
-    sg.servers.each do |server|
-      hosts_file_data += "#{server['ip_address']}\t#{server['hostname']}\t#{server['hostname']}.local\n"
-    end
 
     Kytoon::Util.remote_exec(%{
 # Add first IP to bridge
 if ! ip a | grep #{sg.gateway}/#{cidr} | grep #{sg.bridge}; then
   ip a add #{sg.gateway}/#{cidr} dev #{sg.bridge}
 fi
+    }, sg.gateway_ip)
+  end
 
+  def self.init_host(sg)
+
+    hosts_file_data = "127.0.0.1\tlocalhost localhost.localdomain\n"
+    sg.servers.each do |server|
+      hosts_file_data += "#{server['ip_address']}\t#{server['hostname']}\t#{server['hostname']}.local\n"
+    end
+
+    configure_host_network(sg)
+
+    Kytoon::Util.remote_exec(%{
 cat > /etc/hosts <<-EOF_CAT
 #{hosts_file_data}
 EOF_CAT
