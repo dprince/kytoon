@@ -77,13 +77,23 @@ module Util
     (retry_attempts+1).times do |count|
       sleep retry_sleep if count > 1
       out=%x{
-ssh #{SSH_OPTS} root@#{gateway_ip} bash <<-"REMOTE_EXEC_EOF"
-#{script_text}
-REMOTE_EXEC_EOF
+ssh #{SSH_OPTS} root@#{gateway_ip} true
       }
       retval=$?
       break if retval.success?
     end
+
+    if not retval.success?
+      raise KytoonException, "Failed to connect to #{gateway_ip}."
+    end
+
+    out=%x{
+ssh #{SSH_OPTS} root@#{gateway_ip} bash <<-"REMOTE_EXEC_EOF"
+#{script_text}
+REMOTE_EXEC_EOF
+      }
+    retval=$?
+
     if block_given? then
       yield retval.success?, out
     else
