@@ -301,6 +301,10 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
 
       # inject ssh from host
       DOMID=$(xe vm-param-get uuid=$UUID param-name="dom-id")
+      if [ "$DOMID" == "-1" -o -z "$DOMID" ]; then
+        echo "Unable to find valid domain ID."
+        exit 1
+      fi
       xenstore-rm -s /local/domain/$DOMID/data/guest/ssh_key 2> /dev/null
       xenstore-write -s /local/domain/$DOMID/data/host/ssh_key '{"name": "injectfile", "value": "#{file_data}"}'
       until [ -n "$INJECT_RETVAL" ]; do
