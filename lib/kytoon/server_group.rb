@@ -18,9 +18,9 @@ class ServerGroup
     elsif group_type == "libvirt" then
         require 'kytoon/providers/libvirt'
         @@group_class = Kytoon::Providers::Libvirt::ServerGroup
-    elsif group_type == "cloud_server_vpc" or group_type == "cloud_servers_vpc" then
-        require 'kytoon/providers/cloud_servers_vpc'
-        @@group_class = Kytoon::Providers::CloudServersVPC::ServerGroup
+    elsif group_type == "cloudcue" or group_type == "cloudcue" then
+        require 'kytoon/providers/cloud_cue'
+        @@group_class = Kytoon::Providers::CloudCue::ServerGroup
     else
         raise ConfigException, "Invalid 'group_type' specified."
     end

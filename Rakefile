@@ -21,7 +21,7 @@ begin
   Jeweler::Tasks.new do |gem|
     gem.name = "kytoon"
     gem.summary = "Create & configure ephemeral virtual private clouds."
-    gem.description = "A set of Rake tasks that provide a framework to help automate the creation and configuration of VPC server groups."
+    gem.description = "A set of Rake tasks that provide a framework to help automate the creation and configuration server groups."
     gem.email = "dprince@redhat.com"
     gem.homepage = "http://github.com/dprince/kytoon"
     gem.authors = ["Dan Prince"]

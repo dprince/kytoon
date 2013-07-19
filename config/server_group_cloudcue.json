@@ -1,14 +1,12 @@
 {
 	"name": "Fedora",
-	"domain_name": "vpc",
+	"domain_name": "foo",
 	"description": "Fedora",
-	"vpn_device": "tap",
-	"vpn_proto": "udp",
 	"servers": {
 		"login": {
 			"image_id": "24344414",
 			"flavor_id": "3",
-			"openvpn_server": "true"
+			"gateway": "true"
 		}
 	}
 }

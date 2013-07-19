@@ -3,11 +3,11 @@ require 'test_helper'
 
 module Kytoon
 module Providers
-module CloudServersVPC
+module CloudCue
 
 class ServerTest < Test::Unit::TestCase
 
-  include Kytoon::Providers::CloudServersVPC
+  include Kytoon::Providers::CloudCue
 
   def setup
     @tmp_dir=TmpDir.new_tmp_dir
@@ -18,7 +18,7 @@ class ServerTest < Test::Unit::TestCase
     FileUtils.rm_rf(@tmp_dir)
   end
 
-  def test_vpn_server_rebuild_fails
+  def test_gateway_server_rebuild_fails
     group=ServerGroup.from_xml(SERVER_GROUP_XML)
     server=group.server("login1")
     assert_raises(RuntimeError) do

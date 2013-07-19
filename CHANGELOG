@@ -1,3 +1,7 @@
+* Wed Jul 19 2013 Dan Prince <dprince@redhat.com> - 1.4.0
+  -Add support for CloudCue.
+  -Drop old CloudServers VPC stuff (no longer in use)
+
 * Wed Jun 12 2013 Dan Prince <dprince@redhat.com> - 1.3.9
   -XenServer: Extract configure_host_network (matelaket)
   -XenServer: Fix: Configure host network before configuring nodes (matelaket)

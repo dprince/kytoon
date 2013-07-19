@@ -7,7 +7,7 @@ module Kytoon
 
 module Providers
 
-module CloudServersVPC
+module CloudCue
 
 class Connection
 
@@ -21,9 +21,9 @@ MULTI_PART_BOUNDARY="jtZ!pZ1973um"
 
     configs=Util.load_configs
 
-    base_url = configs["cloud_servers_vpc_url"]
-    @@auth_user = configs["cloud_servers_vpc_username"]
-    @@auth_password = configs["cloud_servers_vpc_password"]
+    base_url = configs["cloudcue_url"]
+    @@auth_user = configs["cloudcue_username"]
+    @@auth_password = configs["cloudcue_password"]
 
     ssl_key = configs["ssl_key"]
     ssl_cert = configs["ssl_cert"]

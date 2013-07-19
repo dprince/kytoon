@@ -2,7 +2,7 @@ module Kytoon
 
 module Providers
 
-module CloudServersVPC
+module CloudCue
 
 class Server
 
@@ -15,7 +15,7 @@ class Server
   attr_accessor :flavor_id
   attr_accessor :image_id
   attr_accessor :server_group_id
-  attr_accessor :openvpn_server
+  attr_accessor :gateway
   attr_accessor :retry_count
   attr_accessor :error_message
   attr_accessor :status
@@ -32,14 +32,14 @@ class Server
     @image_id=options[:image_id]
     @admin_password=options[:admin_password]
     @server_group_id=options[:server_group_id].to_i
-    @openvpn_server = [true, "true"].include?(options[:openvpn_server])
+    @gateway = [true, "true"].include?(options[:gateway])
     @retry_count=options[:retry_count].to_i or 0
     @error_message=options[:error_message]
     @status=options[:status]
     end
 
-  def openvpn_server?
-    return @openvpn_server
+  def gateway?
+    return @gateway
   end
 
   def to_xml
@@ -57,7 +57,7 @@ class Server
       server.tag! "image-id", @image_id
       server.tag! "admin-password", @admin_password
       server.tag! "server-group-id", @server_group_id
-      server.tag! "openvpn-server", "true" if openvpn_server?
+      server.tag! "gateway", "true" if gateway?
       server.tag! "error-message", @error_message if @error_message
     end
     xml.target!
@@ -82,7 +82,7 @@ class Server
         :external_ip_addr => XMLUtil.element_text(sg_xml, "external-ip-addr"),
         :internal_ip_addr => XMLUtil.element_text(sg_xml, "internal-ip-addr"),
         :server_group_id => XMLUtil.element_text(sg_xml, "server-group-id"),
-        :openvpn_server => XMLUtil.element_text(sg_xml, "openvpn_server"),
+        :gateway => XMLUtil.element_text(sg_xml, "gateway"),
         :retry_count => XMLUtil.element_text(sg_xml, "retry-count"),
         :error_message => XMLUtil.element_text(sg_xml, "error-message"),
         :status => XMLUtil.element_text(sg_xml, "status")
@@ -95,8 +95,7 @@ class Server
 
   def rebuild
 
-    raise "Error: Rebuilding the OpenVPN server is not supported at this time." if openvpn_server?
-
+    raise "Error: Rebuilding the gateway server is not supported at this time." if gateway?
     Connection.post("/servers/#{@id}/rebuild", {})
 
   end

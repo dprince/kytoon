@@ -35,7 +35,7 @@ Quick install on Fedora:
 Create a .kytoon.conf file in your $HOME directory.
 
         # The default group type.
-        # Set to one of: openstack, libvirt, xenserver
+        # Set to one of: openstack, libvirt, xenserver, cloudcue
         group_type: openstack
 
         # Openstack Settings

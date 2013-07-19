@@ -6,7 +6,7 @@ require 'tempfile'
 
 module Kytoon
 module Providers
-module CloudServersVPC
+module CloudCue
 
 class ServerGroupTest < Test::Unit::TestCase
 
@@ -21,13 +21,13 @@ class ServerGroupTest < Test::Unit::TestCase
 
   TEST_JSON_CONFIG = %{{
         "name": "test",
-        "domain_name": "vpc",
+        "domain_name": "foo",
         "description": "test description",
         "servers": {
             "login": {
                 "image_id": "51",
                 "flavor_id": "2",
-                "openvpn_server": "true"
+                "gateway": "true"
             },
             "client1": {
                 "image_id": "69",
@@ -37,12 +37,10 @@ class ServerGroupTest < Test::Unit::TestCase
     }}
 
   def test_server_new
-    sg=ServerGroup.new(:name => "test", :domain_name => "vpc", :description => "zz")
+    sg=ServerGroup.new(:name => "test", :domain_name => "foo", :description => "zz")
     assert_equal "test", sg.name
     assert_equal "zz", sg.description
-    assert_equal "vpc", sg.domain_name
-    assert_equal "172.19.0.0", sg.vpn_network
-    assert_equal "255.255.128.0", sg.vpn_subnet
+    assert_equal "foo", sg.domain_name
   end
 
   def test_gateway_ip
@@ -51,19 +49,12 @@ class ServerGroupTest < Test::Unit::TestCase
     assert_equal 1759, sg.id
     assert_equal "test description", sg.description
     assert_equal "dan.prince", sg.owner_name
-    assert_equal "172.19.0.0", sg.vpn_network
-    assert_equal "255.255.128.0", sg.vpn_subnet
     assert_equal 2, sg.servers.size
   end
 
-  #def test_vpn_gateway_name
-    #sg=ServerGroup.from_xml(SERVER_GROUP_XML)
-    #assert_equal "login1", sg.vpn_gateway_name
-  #end
-
   def test_server_group_from_json_config
     sg=ServerGroup.from_json(TEST_JSON_CONFIG)
-    assert_equal "vpc", sg.domain_name
+    assert_equal "foo", sg.domain_name
     assert_equal "test", sg.name
     assert_equal "test description", sg.description
     assert_equal 2, sg.servers.size
@@ -73,13 +64,13 @@ class ServerGroupTest < Test::Unit::TestCase
     login_server=sg.server("login") 
     assert_equal "51", login_server.image_id
     assert_equal "2", login_server.flavor_id
-    assert_equal true, login_server.openvpn_server?
+    assert_equal true, login_server.gateway?
 
     # validate the client1 server
     client1_server=sg.server("client1") 
     assert_equal "69", client1_server.image_id
     assert_equal "3", client1_server.flavor_id
-    assert_equal false, client1_server.openvpn_server?
+    assert_equal false, client1_server.gateway?
 
   end
 

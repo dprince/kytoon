@@ -2,7 +2,7 @@ module Kytoon
 
 module Providers
 
-module CloudServersVPC
+module CloudCue
 
 class SshPublicKey
 
