@@ -238,7 +238,7 @@ class ServerGroup
     until online or (count*20) >= timeout.to_i do
       count+=1
       begin
-        sg=ServerGroup.get(:id => @id, :source => "remote")
+        sg=ServerGroup.get(:id => @id, :remote => true)
 
         online=true
         sg.servers.each do |server|
@@ -279,7 +279,7 @@ class ServerGroup
         server_group.pretty_print
       end
     end
-    sg=ServerGroup.get(:id => sg.id, :source => "remote")
+    sg=ServerGroup.get(:id => sg.id, :remote => true)
     sg.cache_to_disk
     puts "Server group online."
     sg
@@ -289,11 +289,10 @@ class ServerGroup
   # Get a server group. The following options are available:
   #
   # :id - The ID of the server group to get. Defaults to ENV['GROUP_ID']
-  # :source - valid options are 'cache' and 'remote'
+  # :remote - true or false
   def self.get(options={})
 
-    source = ENV['KYTOON_CLOUDCUE_SOURCE'] or options[:source]
-    source = 'cache' if source.nil? or source.empty?
+    remote = options[:remote] or false
     id = options[:id]
     if id.nil? then
       group = ServerGroup.most_recent
@@ -301,27 +300,24 @@ class ServerGroup
       id = group.id
     end
 
-    if source == "remote" then
+    if remote then
       xml=Connection.get("/server_groups/#{id}.xml")
       ServerGroup.from_xml(xml)
-    elsif source == "cache" then
+    else
       out_file = File.join(@@data_dir, "#{id}.xml")
       raise "No server group files exist." if not File.exists?(out_file)
       ServerGroup.from_xml(IO.read(out_file))
-    else
-      raise "Invalid get :source specified."
     end
 
   end
 
-  # :source - valid options are 'remote' and 'cache'
+  # :remote - true or false
   def self.index(options={})
 
-    source = ENV['KYTOON_CLOUDCUE_SOURCE'] or options[:source]
-    source = 'cache' if source.nil? or source.empty?
+    remote = options[:remote] or false
     server_groups=[]
 
-    if source == "remote" then
+    if remote then
       xml=Connection.get("/server_groups.xml")
       dom = REXML::Document.new(xml)
       REXML::XPath.each(dom, "//server-group") do |group_xml|

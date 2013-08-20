@@ -1,3 +1,7 @@
+* Tue Aug 20 2013 Dan Prince <dprince@redhat.com> - 1.4.2
+  -Add --remote option to be used when listing remote CloudCue
+   groups.
+
 * Tue Aug 20 2013 Dan Prince <dprince@redhat.com> - 1.4.1
   -Add ability to list remote groups with CloudCue provider.
   -Test fixes for CloudCue.
