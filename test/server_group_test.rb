@@ -3,6 +3,7 @@ require 'test_helper'
 
 require 'fileutils'
 require 'tempfile'
+require 'kytoon/providers/cloud_cue'
 
 module Kytoon
 module Providers
@@ -12,7 +13,7 @@ class ServerGroupTest < Test::Unit::TestCase
 
   def setup
     @tmp_dir=TmpDir.new_tmp_dir
-    ServerGroup.data_dir=@tmp_dir
+    CloudCue::ServerGroup.data_dir=@tmp_dir
   end
 
   def teardown
@@ -129,7 +130,7 @@ class ServerGroupTest < Test::Unit::TestCase
     File.open("#{tmp_dir}/1759.xml", 'w') do |f|
         f.write(SERVER_GROUP_XML)
     end
-    ServerGroup.data_dir=tmp_dir
+    CloudCue::ServerGroup.data_dir=tmp_dir
 
     Connection.stubs(:get).returns(SERVER_GROUP_XML)
 
@@ -146,11 +147,6 @@ class ServerGroupTest < Test::Unit::TestCase
       ServerGroup.get(:id => "1234", :source => "cache")
     end
 
-    #invalid get source
-    assert_raises(RuntimeError) do
-      ServerGroup.get(:id => "1759", :source => "asdf")
-    end
-
   end
 
   def test_index_from_cache
@@ -159,7 +155,7 @@ class ServerGroupTest < Test::Unit::TestCase
     File.open("#{tmp_dir}/1759.xml", 'w') do |f|
         f.write(SERVER_GROUP_XML)
     end
-    ServerGroup.data_dir=tmp_dir
+    CloudCue::ServerGroup.data_dir=tmp_dir
 
     server_groups = ServerGroup.index
 	
@@ -174,7 +170,7 @@ class ServerGroupTest < Test::Unit::TestCase
     File.open("#{tmp_dir}/1759.xml", 'w') do |f|
         f.write(SERVER_GROUP_XML)
     end
-    ServerGroup.data_dir=tmp_dir
+    CloudCue::ServerGroup.data_dir=tmp_dir
 
     Connection.stubs(:get).returns(SERVER_GROUP_XML)
     server_groups = ServerGroup.index(:source => "remote")
@@ -192,7 +188,7 @@ class ServerGroupTest < Test::Unit::TestCase
     File.open("#{tmp_dir}/1759.xml", 'w') do |f|
         f.write(SERVER_GROUP_XML)
     end
-    ServerGroup.data_dir=tmp_dir
+    CloudCue::ServerGroup.data_dir=tmp_dir
 
     Connection.stubs(:post).returns(SERVER_GROUP_XML)
     Connection.stubs(:get).returns(SERVER_GROUP_XML)
@@ -208,7 +204,7 @@ class ServerGroupTest < Test::Unit::TestCase
 
   def test_most_recent
 
-    File.open("#{ServerGroup.data_dir}/5.xml", 'w') do |f|
+    File.open("#{CloudCue::ServerGroup.data_dir}/5.xml", 'w') do |f|
         f.write(SERVER_GROUP_XML)
     end
 
@@ -224,7 +220,7 @@ class ServerGroupTest < Test::Unit::TestCase
 
     sg=ServerGroup.from_xml(SERVER_GROUP_XML)
     assert sg.cache_to_disk
-    assert File.exists?(File.join(ServerGroup.data_dir, "#{sg.id}.xml"))
+    assert File.exists?(File.join(CloudCue::ServerGroup.data_dir, "#{sg.id}.xml"))
 
   end
 
@@ -233,7 +229,7 @@ class ServerGroupTest < Test::Unit::TestCase
     sg=ServerGroup.from_xml(SERVER_GROUP_XML)
     Connection.stubs(:delete).returns("")
     sg.delete
-    assert_equal false, File.exists?(File.join(ServerGroup.data_dir, "#{sg.id}.xml"))
+    assert_equal false, File.exists?(File.join(CloudCue::ServerGroup.data_dir, "#{sg.id}.xml"))
 
   end
 
