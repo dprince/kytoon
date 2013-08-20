@@ -292,7 +292,8 @@ class ServerGroup
   # :source - valid options are 'cache' and 'remote'
   def self.get(options={})
 
-    source = options[:source] or source = "cache"
+    source = ENV['KYTOON_CLOUDCUE_SOURCE'] or options[:source]
+    source = 'cache' if source.nil? or source.empty?
     id = options[:id]
     if id.nil? then
       group = ServerGroup.most_recent
@@ -316,10 +317,20 @@ class ServerGroup
   # :source - valid options are 'remote' and 'cache'
   def self.index(options={})
 
-    source = options[:source] or source = "cache"
+    source = ENV['KYTOON_CLOUDCUE_SOURCE'] or options[:source]
+    source = 'cache' if source.nil? or source.empty?
     server_groups=[]
-    Dir[File.join(ServerGroup.data_dir, '*.xml')].each do  |file|
-      server_groups << ServerGroup.from_xml(IO.read(file))
+
+    if source == "remote" then
+      xml=Connection.get("/server_groups.xml")
+      dom = REXML::Document.new(xml)
+      REXML::XPath.each(dom, "//server-group") do |group_xml|
+        server_groups << ServerGroup.from_xml(group_xml.to_s)
+      end
+    else
+      Dir[File.join(ServerGroup.data_dir, '*.xml')].each do  |file|
+        server_groups << ServerGroup.from_xml(IO.read(file))
+      end
     end
     server_groups
 
