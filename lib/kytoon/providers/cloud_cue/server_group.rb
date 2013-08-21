@@ -75,6 +75,7 @@ class ServerGroup
         :description => server_config["description"],
         :flavor_id => server_config["flavor_id"],
         :image_id => server_config["image_id"],
+        :image_name => server_config["image_name"],
         :gateway => server_config["gateway"]
       )
     end
@@ -105,7 +106,12 @@ class ServerGroup
             xml_server.name(server.name)
             xml_server.description(server.description)
             xml_server.tag! "flavor-id", server.flavor_id
-            xml_server.tag! "image-id", server.image_id
+            if server.image_id then
+              xml_server.tag! "image-id", server.image_id
+            end
+            if server.image_name then
+              xml_server.tag! "image-name", server.image_name
+            end
             if server.admin_password then
               xml_server.tag! "admin-password", server.admin_password
             end

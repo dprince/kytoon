@@ -14,6 +14,7 @@ class Server
   attr_accessor :cloud_server_id_number
   attr_accessor :flavor_id
   attr_accessor :image_id
+  attr_accessor :image_name
   attr_accessor :server_group_id
   attr_accessor :gateway
   attr_accessor :retry_count
@@ -30,6 +31,7 @@ class Server
     @cloud_server_id_number=options[:cloud_server_id_number]
     @flavor_id=options[:flavor_id]
     @image_id=options[:image_id]
+    @image_name=options[:image_name]
     @admin_password=options[:admin_password]
     @server_group_id=options[:server_group_id].to_i
     @gateway = [true, "true"].include?(options[:gateway])
@@ -54,7 +56,12 @@ class Server
       server.tag! "internal-ip-addr", @internal_ip_addr if @internal_ip_addr
       server.tag! "cloud-server-id-number", @cloud_server_id_number if @cloud_server_id_number
       server.tag! "flavor-id", @flavor_id
-      server.tag! "image-id", @image_id
+      if @image_id then
+        server.tag! "image-id", @image_id
+      end
+      if @image_name then
+        server.tag! "image-name", @image_name
+      end
       server.tag! "admin-password", @admin_password
       server.tag! "server-group-id", @server_group_id
       server.tag! "gateway", "true" if gateway?

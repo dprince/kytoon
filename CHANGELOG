@@ -1,3 +1,6 @@
+* Wed Aug 21 2013 Dan Prince <dprince@redhat.com> - 1.4.3
+  -CloudCue: Add support for image_name.
+
 * Tue Aug 20 2013 Dan Prince <dprince@redhat.com> - 1.4.2
   -Add --remote option to be used when listing remote CloudCue
    groups.
