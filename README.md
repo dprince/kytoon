@@ -137,12 +137,14 @@ For XenServer (uses Openstack Guest agent for instance configuration):
 		"hostname": "login",
 		"image_path": "/images/fedora-agent2.xva",
 		"ip_address": "192.168.0.2",
+		"memory": "1",
 		"mac": "e2:6d:71:67:7e:66"
 		},
 		{
 		"hostname": "nova1",
 		"image_path": "/images/fedora-agent2.xva",
 		"ip_address": "192.168.0.3",
+		"memory": "2",
 		"mac": "e2:ad:a1:a7:ae:67"
 		}
 	    ]

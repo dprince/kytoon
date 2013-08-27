@@ -26,6 +26,8 @@ module Xenserver
 #
 class ServerGroup
 
+  KIB_PER_GIG = 1048576
+
   @@data_dir=File.join(KYTOON_PROJECT, "tmp", "xenserver")
 
   def self.data_dir
@@ -102,6 +104,7 @@ class ServerGroup
       sg.servers << {
         'hostname' => server_hash['hostname'],
         'ip_address' => server_hash['ip_address'],
+        'memory' => server_hash['memory'],
         'mac' => server_hash['mac'],
         'image_path' => server_hash['image_path']
       }
@@ -155,7 +158,7 @@ class ServerGroup
         'servers' => []
     }
     @servers.each do |server|
-        sg_hash['servers'] << {'hostname' => server['hostname'], 'ip_address' => server['ip_address'], 'image_path' => server['image_path'], 'mac' => server['mac']}
+        sg_hash['servers'] << {'hostname' => server['hostname'], 'ip_address' => server['ip_address'], 'memory' => server['memory'], 'image_path' => server['image_path'], 'mac' => server['mac']}
     end
 
     FileUtils.mkdir_p(@@data_dir)
@@ -185,7 +188,8 @@ else
 fi
     }, sg.gateway_ip)
     sg.servers.each do |server|
-        create_instance(sg.gateway_ip, server['image_path'], server['hostname'], server['mac'], sg.bridge, host_ssh_public_key)
+        instance_memory = (KIB_PER_GIG * server['memory'].to_f).to_i
+        create_instance(sg.gateway_ip, server['image_path'], instance_memory, server['hostname'], server['mac'], sg.bridge, host_ssh_public_key)
         network_type = sg.network_type
         if network_type == 'static' then
             configure_host_network(sg)
@@ -273,7 +277,7 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
     }, sg.gateway_ip)
   end
 
-  def self.create_instance(gw_ip, image_path, hostname, mac, xen_bridge='xenbr1', ssh_public_key=nil)
+  def self.create_instance(gw_ip, image_path, memory, hostname, mac, xen_bridge='xenbr1', ssh_public_key=nil)
     file_data = Base64.encode64("/root/.ssh/authorized_keys,#{ssh_public_key}")
 
     Kytoon::Util.remote_exec(%{
@@ -297,6 +301,7 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
         xe vif-destroy uuid=$VIF_UUID &> /dev/null
       done
       xe vif-create vm-uuid=$UUID mac=#{mac} network-uuid=$NETWORK_UUID device=0 &> /dev/null
+      xe vm-memory-limits-set uuid=$UUID static-min=#{memory} static-max=#{memory} dynamic-min=#{memory} dynamic-max=#{memory}
       xe vm-start uuid=$UUID &> /dev/null
 
       # inject ssh from host
